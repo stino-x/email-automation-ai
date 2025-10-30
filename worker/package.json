@@ -1,0 +1,29 @@
+{
+  "name": "email-worker",
+  "version": "1.0.0",
+  "description": "Background worker for email automation",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.77.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "googleapis": "^164.1.0",
+    "groq-sdk": "^0.34.0",
+    "node-cron": "^4.0.2",
+    "date-fns": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.5",
+    "@types/node-cron": "^3.0.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}
