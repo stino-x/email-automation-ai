@@ -63,6 +63,50 @@ export default function ConfigurationPage() {
     setMonitors(updated);
   };
 
+  const clearConfiguration = async () => {
+    if (!currentUser) {
+      toast.error('Please log in to clear configuration');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete the current configuration?')) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      const response = await fetch('/api/config/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser.id
+        },
+        body: JSON.stringify({
+          configuration: {
+            monitored_emails: [],
+            ai_prompt_template: '',
+            is_active: false,
+            max_emails_per_period: 10,
+            once_per_window: true
+          }
+        })
+      });
+
+      if (response.ok) {
+        setMonitors([]);
+        setAiPrompt('');
+        toast.success('Configuration cleared successfully!');
+      } else {
+        toast.error('Failed to clear configuration');
+      }
+    } catch {
+      toast.error('Error clearing configuration');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const saveConfiguration = async () => {
     if (!currentUser) {
       toast.error('Please log in to save configuration');
@@ -92,7 +136,8 @@ export default function ConfigurationPage() {
       if (response.ok) {
         toast.success('Configuration saved successfully!');
       } else {
-        toast.error('Failed to save configuration');
+        const data = await response.json();
+        toast.error(data.message || 'Failed to save configuration');
       }
     } catch {
       toast.error('Error saving configuration');
@@ -734,6 +779,16 @@ export default function ConfigurationPage() {
 
         {/* Save Button */}
         <div className="flex gap-4">
+          <Button 
+            onClick={clearConfiguration} 
+            disabled={isSaving} 
+            size="lg" 
+            variant="destructive"
+            className="flex-1"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Clear Configuration
+          </Button>
           <Button onClick={saveConfiguration} disabled={isSaving} size="lg" className="flex-1">
             <Save className="w-4 h-4 mr-2" />
             {isSaving ? 'Saving...' : 'Save Configuration'}
