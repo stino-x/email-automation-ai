@@ -35,6 +35,67 @@ const authenticate = (req, res, next) => {
 };
 // In-memory store for active monitors
 const activeMonitors = new Map();
+// Helper function to transform database config to worker format
+function transformDatabaseConfig(dbConfig) {
+    return {
+        ...dbConfig,
+        monitored_emails: dbConfig.monitored_emails.map((monitor) => {
+            // Helper to convert day names to numbers
+            const dayNameToNumber = (day) => {
+                const dayMap = {
+                    'sunday': 0,
+                    'monday': 1,
+                    'tuesday': 2,
+                    'wednesday': 3,
+                    'thursday': 4,
+                    'friday': 5,
+                    'saturday': 6
+                };
+                return dayMap[day.toLowerCase()] ?? 1;
+            };
+            let schedule;
+            if (monitor.schedule_type === 'recurring' && monitor.recurring_config) {
+                schedule = {
+                    type: 'recurring',
+                    days_of_week: monitor.recurring_config.days.map(dayNameToNumber),
+                    time_window_start: monitor.recurring_config.start_time,
+                    time_window_end: monitor.recurring_config.end_time,
+                    check_interval_minutes: monitor.recurring_config.interval_minutes,
+                    max_checks_per_day: monitor.recurring_config.max_checks_per_day
+                };
+            }
+            else if (monitor.schedule_type === 'specific_dates' && monitor.specific_dates_config) {
+                schedule = {
+                    type: 'specific_dates',
+                    specific_dates: monitor.specific_dates_config.dates.map((date) => ({
+                        date,
+                        time_window_start: monitor.specific_dates_config.start_time,
+                        time_window_end: monitor.specific_dates_config.end_time,
+                        check_interval_minutes: monitor.specific_dates_config.interval_minutes,
+                        max_checks: monitor.specific_dates_config.max_checks_per_date
+                    }))
+                };
+            }
+            else {
+                // Default recurring schedule
+                schedule = {
+                    type: 'recurring',
+                    days_of_week: [1, 2, 3, 4, 5],
+                    time_window_start: '09:00',
+                    time_window_end: '17:00',
+                    check_interval_minutes: 15,
+                    max_checks_per_day: 30
+                };
+            }
+            return {
+                email_address: monitor.sender_email,
+                keywords: monitor.keywords || [],
+                schedule,
+                stop_after_response: monitor.stop_after_response !== 'never'
+            };
+        })
+    };
+}
 // Root endpoint for testing
 app.get('/', (req, res) => {
     res.json({
@@ -57,8 +118,9 @@ app.get('/worker/health', (req, res) => {
 app.post('/worker/config/update', authenticate, async (req, res) => {
     try {
         const { user_id, configuration } = req.body;
-        // Update active monitors for this user
-        activeMonitors.set(user_id, configuration);
+        // Transform and update active monitors for this user
+        const transformedConfig = transformDatabaseConfig(configuration);
+        activeMonitors.set(user_id, transformedConfig);
         res.json({ success: true, message: 'Configuration updated' });
     }
     catch (error) {
@@ -77,7 +139,9 @@ app.post('/worker/start', authenticate, async (req, res) => {
             .eq('user_id', user_id)
             .single();
         if (config) {
-            activeMonitors.set(user_id, config);
+            // Transform and store the configuration
+            const transformedConfig = transformDatabaseConfig(config);
+            activeMonitors.set(user_id, transformedConfig);
             res.json({ success: true, message: 'Monitoring started' });
         }
         else {
