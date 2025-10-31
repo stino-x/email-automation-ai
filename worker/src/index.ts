@@ -520,12 +520,18 @@ cron.schedule('* * * * *', checkEmails);
 
 // Log all registered routes before starting server
 console.log('=== Registered Routes ===');
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-app._router.stack.forEach((middleware: any) => {
-  if (middleware.route) {
-    console.log(`${Object.keys(middleware.route.methods)[0].toUpperCase()} ${middleware.route.path}`);
-  }
-});
+const router = (app as unknown as { _router?: { stack?: unknown[] } })._router;
+if (router?.stack) {
+  router.stack.forEach((middleware: unknown) => {
+    const route = (middleware as { route?: { methods: Record<string, boolean>; path: string } }).route;
+    if (route) {
+      const [method] = Object.keys(route.methods);
+      console.log(`${method?.toUpperCase() ?? 'UNKNOWN'} ${route.path}`);
+    }
+  });
+} else {
+  console.log('No routes registered yet.');
+}
 console.log('========================');
 
 // Start server

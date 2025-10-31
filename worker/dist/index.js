@@ -436,12 +436,19 @@ async function incrementCheckCounter(userId, monitorId, periodId, maxChecks) {
 node_cron_1.default.schedule('* * * * *', checkEmails);
 // Log all registered routes before starting server
 console.log('=== Registered Routes ===');
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-app._router.stack.forEach((middleware) => {
-    if (middleware.route) {
-        console.log(`${Object.keys(middleware.route.methods)[0].toUpperCase()} ${middleware.route.path}`);
-    }
-});
+const router = app._router;
+if (router?.stack) {
+    router.stack.forEach((middleware) => {
+        const route = middleware.route;
+        if (route) {
+            const [method] = Object.keys(route.methods);
+            console.log(`${method?.toUpperCase() ?? 'UNKNOWN'} ${route.path}`);
+        }
+    });
+}
+else {
+    console.log('No routes registered yet.');
+}
 console.log('========================');
 // Start server
 app.listen(PORT, () => {
