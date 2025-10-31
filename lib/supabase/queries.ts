@@ -108,7 +108,10 @@ export async function updateServiceStatus(userId: string, isActive: boolean): Pr
 export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
   console.log('saveGoogleTokens called for user:', tokens.user_id);
   
-  const { data: existing, error: selectError } = await supabase
+  // Use server client to bypass RLS
+  const serverClient = getServerClient();
+  
+  const { data: existing, error: selectError } = await serverClient
     .from('google_tokens')
     .select('*')
     .eq('user_id', tokens.user_id)
@@ -121,7 +124,7 @@ export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'create
 
   if (existing) {
     console.log('Updating existing tokens...');
-    const { error } = await supabase
+    const { error } = await serverClient
       .from('google_tokens')
       .update({
         access_token: tokens.access_token,
@@ -138,7 +141,7 @@ export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'create
     console.log('Tokens updated successfully');
   } else {
     console.log('Inserting new tokens...');
-    const { error } = await supabase
+    const { error } = await serverClient
       .from('google_tokens')
       .insert(tokens);
 
