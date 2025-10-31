@@ -10,15 +10,72 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
-import { Plus, Trash2, Save, Calendar as CalendarIcon, X } from 'lucide-react';
+import { Plus, Trash2, Save, Calendar as CalendarIcon, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getUser } from '@/lib/auth';
 import type { MonitoredEmail } from '@/types';
 
+// Validation helper
+function validateMonitor(monitor: MonitoredEmail): string[] {
+  const errors: string[] = [];
+  
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!monitor.sender_email || !monitor.sender_email.trim()) {
+    errors.push('Sender email is required');
+  } else if (!emailRegex.test(monitor.sender_email)) {
+    errors.push('Invalid email format');
+  }
+  
+  // Validate based on schedule type
+  if (monitor.schedule_type === 'recurring') {
+    if (!monitor.recurring_config) {
+      errors.push('Recurring schedule configuration is required');
+    } else {
+      if (!monitor.recurring_config.days || monitor.recurring_config.days.length === 0) {
+        errors.push('Select at least one day for recurring schedule');
+      }
+      if (!monitor.recurring_config.start_time) {
+        errors.push('Start time is required');
+      }
+      if (!monitor.recurring_config.end_time) {
+        errors.push('End time is required');
+      }
+    }
+  } else if (monitor.schedule_type === 'specific_dates') {
+    if (!monitor.specific_dates_config) {
+      errors.push('Specific dates configuration is required');
+    } else {
+      if (!monitor.specific_dates_config.dates || monitor.specific_dates_config.dates.length === 0) {
+        errors.push('Select at least one date');
+      }
+      if (!monitor.specific_dates_config.start_time) {
+        errors.push('Start time is required');
+      }
+      if (!monitor.specific_dates_config.end_time) {
+        errors.push('End time is required');
+      }
+    }
+  } else if (monitor.schedule_type === 'hybrid') {
+    if (!monitor.recurring_config && !monitor.specific_dates_config) {
+      errors.push('Hybrid schedule requires both recurring and specific dates configuration');
+    }
+    if (monitor.recurring_config && (!monitor.recurring_config.days || monitor.recurring_config.days.length === 0)) {
+      errors.push('Select at least one day for recurring part');
+    }
+    if (monitor.specific_dates_config && (!monitor.specific_dates_config.dates || monitor.specific_dates_config.dates.length === 0)) {
+      errors.push('Select at least one date for specific dates part');
+    }
+  }
+  
+  return errors;
+}
+
 export default function ConfigurationPage() {
   const [currentUser, setCurrentUser] = useState<{id: string; email?: string} | null>(null);
   const [monitors, setMonitors] = useState<MonitoredEmail[]>([]);
+  const [validationErrors, setValidationErrors] = useState<Record<number, string[]>>({});
   const [aiPrompt, setAiPrompt] = useState(
     'You are my personal assistant. Read this email and respond professionally.\n\n' +
     'Email from {SENDER_NAME} ({SENDER_EMAIL}):\n' +
@@ -54,13 +111,35 @@ export default function ConfigurationPage() {
   };
 
   const removeMonitor = (index: number) => {
-    setMonitors(monitors.filter((_, i) => i !== index));
+    const newMonitors = monitors.filter((_, i) => i !== index);
+    setMonitors(newMonitors);
+    // Re-validate all monitors
+    const newErrors: Record<number, string[]> = {};
+    newMonitors.forEach((m, i) => {
+      const errors = validateMonitor(m);
+      if (errors.length > 0) {
+        newErrors[i] = errors;
+      }
+    });
+    setValidationErrors(newErrors);
   };
 
   const updateMonitor = (index: number, updates: Partial<MonitoredEmail>) => {
     const updated = [...monitors];
     updated[index] = { ...updated[index], ...updates };
     setMonitors(updated);
+    
+    // Validate this monitor
+    const errors = validateMonitor(updated[index]);
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      if (errors.length > 0) {
+        newErrors[index] = errors;
+      } else {
+        delete newErrors[index];
+      }
+      return newErrors;
+    });
   };
 
   const clearConfiguration = async () => {
@@ -113,6 +192,21 @@ export default function ConfigurationPage() {
       return;
     }
 
+    // Validate all monitors before saving
+    const allErrors: Record<number, string[]> = {};
+    monitors.forEach((monitor, index) => {
+      const errors = validateMonitor(monitor);
+      if (errors.length > 0) {
+        allErrors[index] = errors;
+      }
+    });
+
+    if (Object.keys(allErrors).length > 0) {
+      setValidationErrors(allErrors);
+      toast.error('Please fix validation errors before saving');
+      return;
+    }
+
     try {
       setIsSaving(true);
 
@@ -137,7 +231,10 @@ export default function ConfigurationPage() {
         toast.success('Configuration saved successfully!');
       } else {
         const data = await response.json();
-        toast.error(data.message || 'Failed to save configuration');
+        console.error('Validation error:', data);
+        toast.error(data.message || 'Failed to save configuration', {
+          duration: 6000 // Show error longer so you can read it
+        });
       }
     } catch {
       toast.error('Error saving configuration');
@@ -174,14 +271,36 @@ export default function ConfigurationPage() {
                   </div>
 
                   <div className="space-y-4">
+                    {/* Validation Errors Display */}
+                    {validationErrors[index] && validationErrors[index].length > 0 && (
+                      <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
+                          <div className="flex-1">
+                            <p className="font-semibold text-red-400 mb-1">Please fix these issues:</p>
+                            <ul className="list-disc list-inside space-y-1 text-sm text-red-300">
+                              {validationErrors[index].map((error, i) => (
+                                <li key={i}>{error}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
-                      <Label>Sender Email Address</Label>
+                      <Label>Sender Email Address *</Label>
                       <Input
                         placeholder="sender@example.com"
                         value={monitor.sender_email}
                         onChange={(e) => updateMonitor(index, { sender_email: e.target.value })}
-                        className="bg-gray-700 border-gray-600"
+                        className={`bg-gray-700 border-gray-600 ${
+                          validationErrors[index]?.some(e => e.includes('email')) 
+                            ? 'border-red-500 focus:border-red-500' 
+                            : ''
+                        }`}
                       />
+                      <p className="text-xs text-gray-400 mt-1">The email address you want to monitor for incoming messages</p>
                     </div>
 
                     <div>
@@ -196,13 +315,42 @@ export default function ConfigurationPage() {
                         }
                         className="bg-gray-700 border-gray-600"
                       />
+                      <p className="text-xs text-gray-400 mt-1">Leave empty to monitor all emails from this sender</p>
                     </div>
 
-                    <Tabs defaultValue="recurring" className="w-full">
+                    <div>
+                      <Label>Schedule Type *</Label>
+                      <p className="text-xs text-gray-400 mb-2">
+                        Choose how you want to schedule monitoring for this email
+                      </p>
+                    </div>
+
+                    <Tabs 
+                      value={monitor.schedule_type} 
+                      onValueChange={(value) => updateMonitor(index, { 
+                        schedule_type: value as 'recurring' | 'specific_dates' | 'hybrid' 
+                      })}
+                      className="w-full"
+                    >
                       <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="recurring">Recurring</TabsTrigger>
-                        <TabsTrigger value="specific">Specific Dates</TabsTrigger>
-                        <TabsTrigger value="hybrid">Hybrid</TabsTrigger>
+                        <TabsTrigger value="recurring">
+                          <div className="text-center">
+                            <div>Recurring</div>
+                            <div className="text-xs opacity-70">Weekly pattern</div>
+                          </div>
+                        </TabsTrigger>
+                        <TabsTrigger value="specific_dates">
+                          <div className="text-center">
+                            <div>Specific Dates</div>
+                            <div className="text-xs opacity-70">Pick dates</div>
+                          </div>
+                        </TabsTrigger>
+                        <TabsTrigger value="hybrid">
+                          <div className="text-center">
+                            <div>Hybrid</div>
+                            <div className="text-xs opacity-70">Both</div>
+                          </div>
+                        </TabsTrigger>
                       </TabsList>
 
                       <TabsContent value="recurring" className="space-y-4">
@@ -300,12 +448,12 @@ export default function ConfigurationPage() {
                             <Label>Max Checks Per Day</Label>
                             <Input
                               type="number"
-                              value={monitor.recurring_config?.max_checks_per_day || 30}
+                              value={monitor.recurring_config?.max_checks_per_day ?? 30}
                               onChange={(e) =>
                                 updateMonitor(index, {
                                   recurring_config: {
                                     ...monitor.recurring_config!,
-                                    max_checks_per_day: parseInt(e.target.value)
+                                    max_checks_per_day: e.target.value === '' ? 0 : parseInt(e.target.value)
                                   }
                                 })
                               }
@@ -457,7 +605,7 @@ export default function ConfigurationPage() {
                             <Label>Max Checks Per Date</Label>
                             <Input
                               type="number"
-                              value={monitor.specific_dates_config?.max_checks_per_date || 30}
+                              value={monitor.specific_dates_config?.max_checks_per_date ?? 30}
                               onChange={(e) =>
                                 updateMonitor(index, {
                                   schedule_type: 'specific_dates',
@@ -467,7 +615,7 @@ export default function ConfigurationPage() {
                                     start_time: monitor.specific_dates_config?.start_time || '09:00',
                                     end_time: monitor.specific_dates_config?.end_time || '17:00',
                                     interval_minutes: monitor.specific_dates_config?.interval_minutes || 15,
-                                    max_checks_per_date: parseInt(e.target.value)
+                                    max_checks_per_date: e.target.value === '' ? 0 : parseInt(e.target.value)
                                   }
                                 })
                               }
@@ -577,13 +725,13 @@ export default function ConfigurationPage() {
                                 <Label>Max Checks Per Day</Label>
                                 <Input
                                   type="number"
-                                  value={monitor.recurring_config?.max_checks_per_day || 30}
+                                  value={monitor.recurring_config?.max_checks_per_day ?? 30}
                                   onChange={(e) =>
                                     updateMonitor(index, {
                                       schedule_type: 'hybrid',
                                       recurring_config: {
                                         ...monitor.recurring_config!,
-                                        max_checks_per_day: parseInt(e.target.value)
+                                        max_checks_per_day: e.target.value === '' ? 0 : parseInt(e.target.value)
                                       }
                                     })
                                   }
@@ -704,7 +852,7 @@ export default function ConfigurationPage() {
                               <Label>Max Checks Per Date</Label>
                               <Input
                                 type="number"
-                                value={monitor.specific_dates_config?.max_checks_per_date || 30}
+                                value={monitor.specific_dates_config?.max_checks_per_date ?? 30}
                                 onChange={(e) =>
                                   updateMonitor(index, {
                                     schedule_type: 'hybrid',
@@ -714,7 +862,7 @@ export default function ConfigurationPage() {
                                       start_time: monitor.specific_dates_config?.start_time || '09:00',
                                       end_time: monitor.specific_dates_config?.end_time || '17:00',
                                       interval_minutes: monitor.specific_dates_config?.interval_minutes || 15,
-                                      max_checks_per_date: parseInt(e.target.value)
+                                      max_checks_per_date: e.target.value === '' ? 0 : parseInt(e.target.value)
                                     }
                                   })
                                 }
@@ -789,9 +937,19 @@ export default function ConfigurationPage() {
             <Trash2 className="w-4 h-4 mr-2" />
             Clear Configuration
           </Button>
-          <Button onClick={saveConfiguration} disabled={isSaving} size="lg" className="flex-1">
+          <Button 
+            onClick={saveConfiguration} 
+            disabled={isSaving || Object.keys(validationErrors).length > 0 || monitors.length === 0} 
+            size="lg" 
+            className="flex-1"
+          >
             <Save className="w-4 h-4 mr-2" />
             {isSaving ? 'Saving...' : 'Save Configuration'}
+            {Object.keys(validationErrors).length > 0 && (
+              <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                {Object.keys(validationErrors).length} error{Object.keys(validationErrors).length > 1 ? 's' : ''}
+              </span>
+            )}
           </Button>
         </div>
       </div>
