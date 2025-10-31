@@ -320,7 +320,7 @@ export default function ConfigurationPage() {
 
                     <div>
                       <Label>Schedule Type *</Label>
-                      <p className="text-xs text-gray-400 mb-2">
+                      <p className="text-xs text-gray-400 mb-3">
                         Choose how you want to schedule monitoring for this email
                       </p>
                     </div>
@@ -332,28 +332,28 @@ export default function ConfigurationPage() {
                       })}
                       className="w-full"
                     >
-                      <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="recurring">
+                      <TabsList className="grid w-full grid-cols-3 h-auto bg-gray-800">
+                        <TabsTrigger value="recurring" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white py-3">
                           <div className="text-center">
-                            <div>Recurring</div>
-                            <div className="text-xs opacity-70">Weekly pattern</div>
+                            <div className="font-medium">Recurring</div>
+                            <div className="text-xs mt-0.5">Weekly pattern</div>
                           </div>
                         </TabsTrigger>
-                        <TabsTrigger value="specific_dates">
+                        <TabsTrigger value="specific_dates" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white py-3">
                           <div className="text-center">
-                            <div>Specific Dates</div>
-                            <div className="text-xs opacity-70">Pick dates</div>
+                            <div className="font-medium">Specific Dates</div>
+                            <div className="text-xs mt-0.5">Pick dates</div>
                           </div>
                         </TabsTrigger>
-                        <TabsTrigger value="hybrid">
+                        <TabsTrigger value="hybrid" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white py-3">
                           <div className="text-center">
-                            <div>Hybrid</div>
-                            <div className="text-xs opacity-70">Both</div>
+                            <div className="font-medium">Hybrid</div>
+                            <div className="text-xs mt-0.5">Both</div>
                           </div>
                         </TabsTrigger>
                       </TabsList>
 
-                      <TabsContent value="recurring" className="space-y-4">
+                      <TabsContent value="recurring" className="space-y-4 mt-4">
                         <div>
                           <Label>Days of Week</Label>
                           <div className="grid grid-cols-4 gap-2 mt-2">
@@ -361,6 +361,7 @@ export default function ConfigurationPage() {
                               (day) => (
                                 <div key={day} className="flex items-center space-x-2">
                                   <Checkbox
+                                    id={`${index}-${day}`}
                                     checked={monitor.recurring_config?.days.includes(day)}
                                     onCheckedChange={(checked) => {
                                       const days = monitor.recurring_config?.days || [];
@@ -374,7 +375,9 @@ export default function ConfigurationPage() {
                                       });
                                     }}
                                   />
-                                  <Label className="capitalize text-sm">{day.slice(0, 3)}</Label>
+                                  <Label htmlFor={`${index}-${day}`} className="capitalize text-sm cursor-pointer text-gray-200">
+                                    {day.slice(0, 3)}
+                                  </Label>
                                 </div>
                               )
                             )}
@@ -430,17 +433,17 @@ export default function ConfigurationPage() {
                                 })
                               }
                             >
-                              <SelectTrigger className="bg-gray-700 border-gray-600">
+                              <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="1">1 minute</SelectItem>
-                                <SelectItem value="2">2 minutes</SelectItem>
-                                <SelectItem value="5">5 minutes</SelectItem>
-                                <SelectItem value="10">10 minutes</SelectItem>
-                                <SelectItem value="15">15 minutes</SelectItem>
-                                <SelectItem value="30">30 minutes</SelectItem>
-                                <SelectItem value="60">60 minutes</SelectItem>
+                              <SelectContent className="bg-gray-800 border-gray-600">
+                                <SelectItem value="1" className="text-white">1 minute</SelectItem>
+                                <SelectItem value="2" className="text-white">2 minutes</SelectItem>
+                                <SelectItem value="5" className="text-white">5 minutes</SelectItem>
+                                <SelectItem value="10" className="text-white">10 minutes</SelectItem>
+                                <SelectItem value="15" className="text-white">15 minutes</SelectItem>
+                                <SelectItem value="30" className="text-white">30 minutes</SelectItem>
+                                <SelectItem value="60" className="text-white">60 minutes</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -463,7 +466,7 @@ export default function ConfigurationPage() {
                         </div>
                       </TabsContent>
 
-                      <TabsContent value="specific" className="space-y-4">
+                      <TabsContent value="specific" className="space-y-4 mt-4">
                         <div>
                           <Label className="mb-2 block">Select Dates</Label>
                           <div className="bg-gray-700 p-4 rounded-md">
@@ -587,17 +590,17 @@ export default function ConfigurationPage() {
                                 })
                               }
                             >
-                              <SelectTrigger className="bg-gray-700 border-gray-600">
+                              <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="1">1 minute</SelectItem>
-                                <SelectItem value="2">2 minutes</SelectItem>
-                                <SelectItem value="5">5 minutes</SelectItem>
-                                <SelectItem value="10">10 minutes</SelectItem>
-                                <SelectItem value="15">15 minutes</SelectItem>
-                                <SelectItem value="30">30 minutes</SelectItem>
-                                <SelectItem value="60">60 minutes</SelectItem>
+                              <SelectContent className="bg-gray-800 border-gray-600">
+                                <SelectItem value="1" className="text-white">1 minute</SelectItem>
+                                <SelectItem value="2" className="text-white">2 minutes</SelectItem>
+                                <SelectItem value="5" className="text-white">5 minutes</SelectItem>
+                                <SelectItem value="10" className="text-white">10 minutes</SelectItem>
+                                <SelectItem value="15" className="text-white">15 minutes</SelectItem>
+                                <SelectItem value="30" className="text-white">30 minutes</SelectItem>
+                                <SelectItem value="60" className="text-white">60 minutes</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -625,7 +628,7 @@ export default function ConfigurationPage() {
                         </div>
                       </TabsContent>
 
-                      <TabsContent value="hybrid" className="space-y-6">
+                      <TabsContent value="hybrid" className="space-y-6 mt-4">
                         <div className="border border-gray-700 rounded-lg p-4">
                           <h4 className="font-semibold mb-4">Recurring Schedule</h4>
                           <div className="space-y-4">
@@ -709,15 +712,15 @@ export default function ConfigurationPage() {
                                     })
                                   }
                                 >
-                                  <SelectTrigger className="bg-gray-700 border-gray-600">
+                                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                                     <SelectValue />
                                   </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="1">1 minute</SelectItem>
-                                    <SelectItem value="5">5 minutes</SelectItem>
-                                    <SelectItem value="15">15 minutes</SelectItem>
-                                    <SelectItem value="30">30 minutes</SelectItem>
-                                    <SelectItem value="60">60 minutes</SelectItem>
+                                  <SelectContent className="bg-gray-800 border-gray-600">
+                                    <SelectItem value="1" className="text-white">1 minute</SelectItem>
+                                    <SelectItem value="5" className="text-white">5 minutes</SelectItem>
+                                    <SelectItem value="15" className="text-white">15 minutes</SelectItem>
+                                    <SelectItem value="30" className="text-white">30 minutes</SelectItem>
+                                    <SelectItem value="60" className="text-white">60 minutes</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -884,14 +887,14 @@ export default function ConfigurationPage() {
                           })
                         }
                       >
-                        <SelectTrigger className="bg-gray-700 border-gray-600">
+                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="never">Never stop</SelectItem>
-                          <SelectItem value="rest_of_day">Rest of day</SelectItem>
-                          <SelectItem value="rest_of_window">Rest of window</SelectItem>
-                          <SelectItem value="next_period">Next period</SelectItem>
+                        <SelectContent className="bg-gray-800 border-gray-600">
+                          <SelectItem value="never" className="text-white">Never stop</SelectItem>
+                          <SelectItem value="rest_of_day" className="text-white">Rest of day</SelectItem>
+                          <SelectItem value="rest_of_window" className="text-white">Rest of window</SelectItem>
+                          <SelectItem value="next_period" className="text-white">Next period</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
