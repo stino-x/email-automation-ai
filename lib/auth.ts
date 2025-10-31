@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { getServerClient } from './supabase/client';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -19,24 +18,21 @@ export async function signUp(email: string, password: string) {
 
   if (error) throw error;
 
-  // Create user in custom users table using service role to bypass RLS
+  // Call API to create user in custom table (API uses service role)
   if (data.user) {
-    console.log('Creating user record in custom users table:', data.user.id, email);
-    const serverClient = getServerClient();
-    const { error: userError } = await serverClient
-      .from('users')
-      .insert({
-        id: data.user.id,
-        email: email
-      })
-      .select()
-      .single();
-
-    if (userError) {
-      console.error('Error creating user record:', userError);
-      // Don't throw - auth was successful, just log the error
-    } else {
-      console.log('User record created successfully');
+    console.log('Calling API to create user record:', data.user.id);
+    try {
+      await fetch('/api/auth/sync-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': data.user.id
+        },
+        body: JSON.stringify({ email: email })
+      });
+    } catch (err) {
+      console.error('Failed to sync user on signup:', err);
+      // Don't fail signup if sync fails
     }
   }
 
@@ -51,34 +47,21 @@ export async function signIn(email: string, password: string) {
 
   if (error) throw error;
 
-  // Ensure user exists in custom users table using service role to bypass RLS
+  // Call API to ensure user exists in custom table (API uses service role)
   if (data.user) {
-    console.log('Checking/creating user record for:', data.user.id, email);
-    const serverClient = getServerClient();
-    
-    const { data: existingUser, error: checkError } = await serverClient
-      .from('users')
-      .select('id')
-      .eq('id', data.user.id)
-      .single();
-
-    if (checkError && checkError.code === 'PGRST116') {
-      // User doesn't exist, create it
-      console.log('User not found in custom table, creating...');
-      const { error: insertError } = await serverClient
-        .from('users')
-        .insert({
-          id: data.user.id,
-          email: email
-        });
-
-      if (insertError) {
-        console.error('Error creating user record on login:', insertError);
-      } else {
-        console.log('User record created successfully on login');
-      }
-    } else if (existingUser) {
-      console.log('User record already exists');
+    console.log('Calling API to sync user record:', data.user.id);
+    try {
+      await fetch('/api/auth/sync-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': data.user.id
+        },
+        body: JSON.stringify({ email: email })
+      });
+    } catch (err) {
+      console.error('Failed to sync user on login:', err);
+      // Don't fail login if sync fails
     }
   }
 
