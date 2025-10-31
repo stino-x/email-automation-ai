@@ -107,15 +107,23 @@ export async function updateServiceStatus(userId: string, isActive: boolean): Pr
 // Google tokens operations
 export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
   console.log('saveGoogleTokens called for user:', tokens.user_id);
+  console.log('Google email:', tokens.google_email || 'not provided');
   
   // Use server client to bypass RLS
   const serverClient = getServerClient();
   
-  const { data: existing, error: selectError } = await serverClient
+  // Check if tokens already exist for this user and google_email combination
+  let existingQuery = serverClient
     .from('google_tokens')
     .select('*')
-    .eq('user_id', tokens.user_id)
-    .single();
+    .eq('user_id', tokens.user_id);
+  
+  // If google_email is provided (multi-account support), check for that specific account
+  if (tokens.google_email) {
+    existingQuery = existingQuery.eq('google_email', tokens.google_email);
+  }
+  
+  const { data: existing, error: selectError } = await existingQuery.maybeSingle();
 
   console.log('Existing tokens found:', !!existing);
   if (selectError && selectError.code !== 'PGRST116') {
@@ -124,15 +132,33 @@ export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'create
 
   if (existing) {
     console.log('Updating existing tokens...');
-    const { error } = await serverClient
+    const updateData: Partial<GoogleTokens> = {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: tokens.expires_at,
+      scopes: tokens.scopes,
+      updated_at: new Date().toISOString()
+    };
+    
+    // Only update google_email and account_label if provided
+    if (tokens.google_email) {
+      updateData.google_email = tokens.google_email;
+    }
+    if (tokens.account_label) {
+      updateData.account_label = tokens.account_label;
+    }
+    
+    let updateQuery = serverClient
       .from('google_tokens')
-      .update({
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_at: tokens.expires_at,
-        scopes: tokens.scopes
-      })
+      .update(updateData)
       .eq('user_id', tokens.user_id);
+    
+    // Match on google_email if provided
+    if (tokens.google_email) {
+      updateQuery = updateQuery.eq('google_email', tokens.google_email);
+    }
+
+    const { error } = await updateQuery;
 
     if (error) {
       console.error('Error updating tokens:', error);

@@ -329,6 +329,58 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Google Accounts Management */}
+        <Card className="bg-gray-900 border-gray-800 mb-8">
+          <CardHeader>
+            <CardTitle>Google Accounts</CardTitle>
+            <CardDescription>Manage multiple Gmail accounts for monitoring different inboxes</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-sm text-gray-400 mb-4">
+              Connect multiple Gmail accounts to monitor different inboxes. Each email monitor configuration can use a different receiving account.
+            </div>
+            
+            {/* Primary Account */}
+            {status?.google_gmail === 'connected' && (
+              <div className="p-4 bg-gray-800 rounded-lg border-2 border-blue-500/50">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon('connected')}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{currentUser?.email || 'Primary Account'}</p>
+                        <Badge className="bg-blue-600 text-xs">Primary</Badge>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Gmail • Calendar • Default account</p>
+                    </div>
+                  </div>
+                  <Button onClick={disconnectGoogle} variant="outline" size="sm">
+                    Disconnect
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Additional Accounts - Coming Soon */}
+            <div className="p-4 bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-700">
+              <div className="text-center py-4">
+                <p className="text-sm font-medium text-gray-400 mb-2">Additional Gmail Accounts</p>
+                <p className="text-xs text-gray-500 mb-4">
+                  Support for multiple Gmail accounts coming soon. You&apos;ll be able to monitor work@gmail.com, personal@gmail.com, etc.
+                </p>
+                <Button variant="outline" size="sm" disabled>
+                  + Add Another Account
+                </Button>
+              </div>
+            </div>
+
+            <div className="text-xs text-gray-500 p-3 bg-gray-800/50 rounded">
+              <strong>Note:</strong> Currently, one Gmail account can monitor multiple sender email addresses. 
+              Multi-account support (monitoring multiple Gmail inboxes) is in development.
+            </div>
+          </CardContent>
+        </Card>
+
         {/* System Status */}
         <Card className="bg-gray-900 border-gray-800 mb-8">
           <CardHeader>

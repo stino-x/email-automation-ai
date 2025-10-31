@@ -27,6 +27,8 @@ interface DatabaseMonitor {
     max_checks_per_date?: number;
   };
   stop_after_response?: string;
+  is_active?: boolean; // Individual monitor toggle
+  receiving_email?: string; // Which Gmail account receives this email
 }
 
 interface DatabaseConfig {
@@ -151,7 +153,9 @@ function transformDatabaseConfig(dbConfig: DatabaseConfig): UserConfiguration {
         email_address: monitor.sender_email!,
         keywords: monitor.keywords || [],
         schedule,
-        stop_after_response: monitor.stop_after_response !== 'never'
+        stop_after_response: monitor.stop_after_response !== 'never',
+        is_active: monitor.is_active ?? true, // Include is_active
+        receiving_email: monitor.receiving_email // Include receiving_email for multi-account support
       };
     }).filter((m): m is MonitoredEmail => m !== null) // Remove null entries
   };
@@ -306,16 +310,14 @@ async function checkEmails() {
 
     console.log(`[USER ${userId}] Checking ${config.monitored_emails.length} monitors`);
 
-    // Fetch Google tokens for this user
-    const { data: tokens } = await supabase
-      .from('google_tokens')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (!tokens) {
-      console.log(`[USER ${userId}] No Google tokens found, skipping`);
-      continue;
+    // Group monitors by receiving_email to fetch appropriate tokens
+    const monitorsByAccount = new Map<string | null, typeof config.monitored_emails>();
+    for (const monitor of config.monitored_emails) {
+      const accountKey = monitor.receiving_email || null; // null = primary account
+      if (!monitorsByAccount.has(accountKey)) {
+        monitorsByAccount.set(accountKey, []);
+      }
+      monitorsByAccount.get(accountKey)!.push(monitor);
     }
 
     // Create a map of sender_email -> is_active from FRESH database config for INSTANT toggle response
@@ -328,19 +330,44 @@ async function checkEmails() {
       }
     }
 
-    // Check each monitored email using transformed config + FRESH status from database
-    for (const monitor of config.monitored_emails) {
-      try {
-        // STRICT RULE 2: INSTANT individual monitor pause - check FRESH DB value every time
-        const isFreshActive = freshStatusMap.get(monitor.email_address) ?? true;
-        if (!isFreshActive) {
-          console.log(`[${monitor.email_address}] ⏸️ Monitor individually PAUSED (INSTANT from DB) - Skipping`);
-          continue;
+    // Process monitors for each Google account
+    for (const [receivingEmail, monitorsForAccount] of monitorsByAccount) {
+      // Fetch Google tokens for the specific account (or primary if null)
+      let tokensQuery = supabase
+        .from('google_tokens')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (receivingEmail) {
+        // Fetch tokens for specific Google account
+        tokensQuery = tokensQuery.eq('google_email', receivingEmail);
+      }
+      // If receivingEmail is null, fetch primary account (first one, or the one without google_email)
+      // For backward compatibility, if google_email column doesn't exist, this will still work
+
+      const { data: tokens } = await tokensQuery.single();
+
+      if (!tokens) {
+        console.log(`[USER ${userId}] No Google tokens found for account ${receivingEmail || 'primary'}, skipping ${monitorsForAccount.length} monitors`);
+        continue;
+      }
+
+      console.log(`[USER ${userId}] Processing ${monitorsForAccount.length} monitors for account: ${receivingEmail || 'primary'}`);
+
+      // Check each monitored email using transformed config + FRESH status from database
+      for (const monitor of monitorsForAccount) {
+        try {
+          // STRICT RULE 2: INSTANT individual monitor pause - check FRESH DB value every time
+          const isFreshActive = freshStatusMap.get(monitor.email_address) ?? true;
+          if (!isFreshActive) {
+            console.log(`[${monitor.email_address}] ⏸️ Monitor individually PAUSED (INSTANT from DB) - Skipping`);
+            continue;
+          }
+          
+          await checkSingleMonitor(userId, monitor, tokens, config.ai_prompt_template);
+        } catch (error) {
+          console.error(`[USER ${userId}] Error checking ${monitor.email_address}:`, error);
         }
-        
-        await checkSingleMonitor(userId, monitor, tokens, config.ai_prompt_template);
-      } catch (error) {
-        console.error(`[USER ${userId}] Error checking ${monitor.email_address}:`, error);
       }
     }
   }

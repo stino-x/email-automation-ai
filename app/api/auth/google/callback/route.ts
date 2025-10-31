@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTokensFromCode } from '@/lib/google/auth';
+import { getTokensFromCode, getUserEmail } from '@/lib/google/auth';
 import { saveGoogleTokens } from '@/lib/supabase/queries';
 import type { GoogleAuthResponse } from '@/types';
 
@@ -37,6 +37,18 @@ export async function GET(request: NextRequest) {
       expires_at: tokens.expires_at,
       scopes: tokens.scopes
     });
+
+    // Fetch the Google account email address
+    console.log('Fetching Google account email...');
+    try {
+      const googleEmail = await getUserEmail(tokens);
+      tokens.google_email = googleEmail;
+      tokens.account_label = 'Primary Account'; // Default label, user can change in settings
+      console.log('Google account email:', googleEmail);
+    } catch (error) {
+      console.error('Failed to fetch Google email (non-fatal):', error);
+      // Continue without email - backward compatible
+    }
 
     // Save tokens to database (skip email verification - not needed)
     console.log('Saving tokens to database for user:', userId);
