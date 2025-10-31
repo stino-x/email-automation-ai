@@ -502,9 +502,11 @@ async function checkSingleMonitor(
         prompt = prompt.replace(/\{CALENDAR_EVENTS\}/g, formattedEvents);
       }
 
+      // Use model from env so we can rotate models without code changes
+      const groqModel = process.env.GROQ_MODEL || 'llama-3.1-70b-versatile';
       const completion = await groq.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.1-70b-versatile',
+        model: groqModel,
         temperature: 0.7,
         max_tokens: 1024,
       });

@@ -53,6 +53,20 @@ export async function POST(request: NextRequest) {
             configuration: savedConfig
           })
         });
+        // Also request the worker to start monitoring immediately for this user
+        try {
+          await fetch(`${process.env.WORKER_WEBHOOK_URL}/worker/start`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.WORKER_SECRET}`
+            },
+            body: JSON.stringify({ user_id: userId })
+          });
+        } catch (startErr) {
+          console.error('Failed to trigger worker start:', startErr);
+          // don't fail the request if worker start fails
+        }
       } catch (error) {
         console.error('Failed to notify worker:', error);
         // Don't fail the request if worker notification fails
