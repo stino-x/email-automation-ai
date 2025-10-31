@@ -291,10 +291,10 @@ async function checkEmails() {
   console.log('[CRON] Running email checks at', new Date().toISOString());
 
   for (const [userId, config] of activeMonitors.entries()) {
-    // STRICT RULE 1: IMMEDIATELY respect pause toggle - check database every time
+    // STRICT RULE 1: IMMEDIATELY respect pause toggle - check database EVERY TIME for real-time status
     const { data: dbConfig } = await supabase
       .from('configurations')
-      .select('is_active')
+      .select('is_active, monitored_emails')
       .eq('user_id', userId)
       .single();
 
@@ -318,9 +318,26 @@ async function checkEmails() {
       continue;
     }
 
-    // Check each monitored email
+    // Create a map of sender_email -> is_active from FRESH database config for INSTANT toggle response
+    const freshStatusMap = new Map<string, boolean>();
+    if (dbConfig.monitored_emails && Array.isArray(dbConfig.monitored_emails)) {
+      for (const dbMonitor of dbConfig.monitored_emails) {
+        if (dbMonitor?.sender_email) {
+          freshStatusMap.set(dbMonitor.sender_email, dbMonitor.is_active ?? true);
+        }
+      }
+    }
+
+    // Check each monitored email using transformed config + FRESH status from database
     for (const monitor of config.monitored_emails) {
       try {
+        // STRICT RULE 2: INSTANT individual monitor pause - check FRESH DB value every time
+        const isFreshActive = freshStatusMap.get(monitor.email_address) ?? true;
+        if (!isFreshActive) {
+          console.log(`[${monitor.email_address}] ⏸️ Monitor individually PAUSED (INSTANT from DB) - Skipping`);
+          continue;
+        }
+        
         await checkSingleMonitor(userId, monitor, tokens, config.ai_prompt_template);
       } catch (error) {
         console.error(`[USER ${userId}] Error checking ${monitor.email_address}:`, error);

@@ -30,6 +30,7 @@ export interface MonitoredEmail {
   recurring_config?: RecurringConfig;
   specific_dates_config?: SpecificDatesConfig;
   stop_after_response: StopAfterResponse;
+  is_active?: boolean; // Individual toggle for each monitor
 }
 
 export interface UserConfiguration {

@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
-import { Plus, Trash2, Save, Calendar as CalendarIcon, X, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Save, Calendar as CalendarIcon, X, AlertCircle, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getUser } from '@/lib/auth';
@@ -77,11 +78,19 @@ export default function ConfigurationPage() {
   const [monitors, setMonitors] = useState<MonitoredEmail[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<number, string[]>>({});
   const [aiPrompt, setAiPrompt] = useState(
-    'You are my personal assistant. Read this email and respond professionally.\n\n' +
+    'You are my personal AI assistant. Read this email and respond professionally on my behalf.\n\n' +
     'Email from {SENDER_NAME} ({SENDER_EMAIL}):\n' +
     'Subject: {EMAIL_SUBJECT}\n\n' +
     '{EMAIL_CONTENT}\n\n' +
-    'Please draft a helpful response.'
+    '📅 MY CALENDAR AVAILABILITY (Next 30 days):\n' +
+    '{CALENDAR_EVENTS}\n\n' +
+    'IMPORTANT INSTRUCTIONS:\n' +
+    '1. Check my calendar events CAREFULLY before answering availability questions\n' +
+    '2. If asked about availability on a specific date/time, look for conflicts in the calendar\n' +
+    '3. If I have an event at that time, say I\'m NOT available and suggest alternative times\n' +
+    '4. If no calendar events conflict, confirm I AM available\n' +
+    '5. Be professional, helpful, and accurate about my schedule\n\n' +
+    'Draft a helpful and accurate response based on the email content and my calendar.'
   );
   const [isSaving, setIsSaving] = useState(false);
 
@@ -89,9 +98,35 @@ export default function ConfigurationPage() {
     const loadUser = async () => {
       const user = await getUser();
       setCurrentUser(user);
+      
+      // Auto-load existing configuration if user is logged in
+      if (user) {
+        loadConfiguration(user.id);
+      }
     };
     loadUser();
   }, []);
+
+  const loadConfiguration = async (userId: string) => {
+    try {
+      const response = await fetch('/api/config/get', {
+        headers: {
+          'x-user-id': userId
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.configuration && data.configuration.monitored_emails.length > 0) {
+          setMonitors(data.configuration.monitored_emails);
+          setAiPrompt(data.configuration.ai_prompt_template || aiPrompt);
+          toast.success('Configuration loaded successfully!');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading configuration:', error);
+    }
+  };
 
   const addMonitor = () => {
     const newMonitor: MonitoredEmail = {
@@ -105,7 +140,8 @@ export default function ConfigurationPage() {
         interval_minutes: 15,
         max_checks_per_day: 30
       },
-      stop_after_response: 'never'
+      stop_after_response: 'never',
+      is_active: true // New monitors are active by default
     };
     setMonitors([...monitors, newMonitor]);
   };
@@ -260,7 +296,20 @@ export default function ConfigurationPage() {
               <Card key={index} className="bg-gray-800 border-gray-700">
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold">Monitor #{index + 1}</h3>
+                    <div className="flex items-center gap-4">
+                      <h3 className="text-lg font-semibold">Monitor #{index + 1}</h3>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={monitor.is_active ?? true}
+                          onCheckedChange={(checked) => 
+                            updateMonitor(index, { is_active: checked })
+                          }
+                        />
+                        <Label className="text-sm">
+                          {monitor.is_active ?? true ? '🟢 Active' : '⏸️ Paused'}
+                        </Label>
+                      </div>
+                    </div>
                     <Button
                       variant="destructive"
                       size="sm"
@@ -428,7 +477,7 @@ export default function ConfigurationPage() {
                                 updateMonitor(index, {
                                   recurring_config: {
                                     ...monitor.recurring_config!,
-                                    interval_minutes: parseInt(value)
+                                    interval_minutes: parseFloat(value)
                                   }
                                 })
                               }
@@ -437,6 +486,7 @@ export default function ConfigurationPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-gray-800 border-gray-600">
+                                <SelectItem value="0.5" className="text-white">30 seconds</SelectItem>
                                 <SelectItem value="1" className="text-white">1 minute</SelectItem>
                                 <SelectItem value="2" className="text-white">2 minutes</SelectItem>
                                 <SelectItem value="5" className="text-white">5 minutes</SelectItem>
@@ -584,7 +634,7 @@ export default function ConfigurationPage() {
                                     dates: monitor.specific_dates_config?.dates || [],
                                     start_time: monitor.specific_dates_config?.start_time || '09:00',
                                     end_time: monitor.specific_dates_config?.end_time || '17:00',
-                                    interval_minutes: parseInt(value),
+                                    interval_minutes: parseFloat(value),
                                     max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date || 30
                                   }
                                 })
@@ -594,6 +644,7 @@ export default function ConfigurationPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-gray-800 border-gray-600">
+                                <SelectItem value="0.5" className="text-white">30 seconds</SelectItem>
                                 <SelectItem value="1" className="text-white">1 minute</SelectItem>
                                 <SelectItem value="2" className="text-white">2 minutes</SelectItem>
                                 <SelectItem value="5" className="text-white">5 minutes</SelectItem>
@@ -707,7 +758,7 @@ export default function ConfigurationPage() {
                                       schedule_type: 'hybrid',
                                       recurring_config: {
                                         ...monitor.recurring_config!,
-                                        interval_minutes: parseInt(value)
+                                        interval_minutes: parseFloat(value)
                                       }
                                     })
                                   }
@@ -716,6 +767,7 @@ export default function ConfigurationPage() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent className="bg-gray-800 border-gray-600">
+                                    <SelectItem value="0.5" className="text-white">30 seconds</SelectItem>
                                     <SelectItem value="1" className="text-white">1 minute</SelectItem>
                                     <SelectItem value="5" className="text-white">5 minutes</SelectItem>
                                     <SelectItem value="15" className="text-white">15 minutes</SelectItem>

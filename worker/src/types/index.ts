@@ -12,6 +12,7 @@ export interface MonitoredEmail {
   keywords?: string[];
   schedule: ScheduleConfig;
   stop_after_response?: boolean;
+  is_active?: boolean; // Individual toggle for each monitor
 }
 
 export interface ScheduleConfig {
