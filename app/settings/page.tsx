@@ -180,6 +180,29 @@ export default function SettingsPage() {
     }
   };
 
+  const syncUserToDatabase = async () => {
+    try {
+      const response = await fetch('/api/auth/sync-user', {
+        method: 'POST'
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(data.message, {
+          description: `User ID: ${data.user_id}`
+        });
+        // Reload user and status after sync
+        loadUserAndStatus();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error('Failed to sync user');
+      console.error('User sync failed:', error);
+    }
+  };
+
   const getStatusIcon = (state: string) => {
     if (state === 'connected' || state === 'valid') {
       return <CheckCircle2 className="w-5 h-5 text-green-500" />;
@@ -313,6 +336,9 @@ export default function SettingsPage() {
             <CardDescription>Test your configuration without sending real emails</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Button onClick={syncUserToDatabase} variant="default" className="w-full bg-green-600 hover:bg-green-700">
+              Sync User to Database
+            </Button>
             <Button onClick={testEmailProcessing} variant="outline" className="w-full">
               Run Test Email Check
             </Button>
