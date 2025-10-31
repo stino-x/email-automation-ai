@@ -119,6 +119,67 @@ export default function SettingsPage() {
     }
   };
 
+  const checkTokenStatus = async () => {
+    if (!currentUser) {
+      toast.error('Please log in first');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/google/status', {
+        headers: { 'x-user-id': currentUser.id }
+      });
+
+      const data = await response.json();
+      if (data.has_tokens) {
+        toast.success(`Google connected! Scopes: ${data.scopes?.join(', ') || 'N/A'}`, {
+          duration: 5000,
+          description: `Expires: ${data.expires_at ? new Date(data.expires_at).toLocaleString() : 'Unknown'}`
+        });
+      } else {
+        toast.error('No Google tokens found in database');
+      }
+    } catch (error) {
+      toast.error('Failed to check token status');
+      console.error('Token status check failed:', error);
+    }
+  };
+
+  const checkUserDebugInfo = async () => {
+    if (!currentUser) {
+      toast.error('Please log in first');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/debug/user-info', {
+        headers: { 'x-user-id': currentUser.id }
+      });
+
+      const data = await response.json();
+      console.log('=== DEBUG INFO ===', data);
+      
+      if (data.success) {
+        const info = [
+          `User ID: ${data.user?.id}`,
+          `Email: ${data.user?.email}`,
+          `Tokens: ${data.tokens?.found ? '✓ Found' : '✗ Not Found'}`,
+          `Config: ${data.configuration?.found ? '✓ Found' : '✗ Not Found'}`
+        ].join('\n');
+        
+        toast.success('Debug info logged to console', {
+          duration: 5000,
+          description: info
+        });
+      } else {
+        toast.error(`Debug check failed: ${data.message}`);
+      }
+    } catch (error) {
+      toast.error('Failed to get debug info');
+      console.error('Debug info check failed:', error);
+    }
+  };
+
   const getStatusIcon = (state: string) => {
     if (state === 'connected' || state === 'valid') {
       return <CheckCircle2 className="w-5 h-5 text-green-500" />;
@@ -254,6 +315,12 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <Button onClick={testEmailProcessing} variant="outline" className="w-full">
               Run Test Email Check
+            </Button>
+            <Button onClick={checkTokenStatus} variant="outline" className="w-full">
+              Check Google Token Status
+            </Button>
+            <Button onClick={checkUserDebugInfo} variant="outline" className="w-full">
+              Show Full Debug Info
             </Button>
             <Button onClick={refreshStatus} variant="outline" className="w-full">
               Refresh Status
