@@ -43,6 +43,16 @@ const authenticate = (req: express.Request, res: express.Response, next: express
 // In-memory store for active monitors
 const activeMonitors = new Map<string, UserConfiguration>();
 
+// Root endpoint for testing
+app.get('/', (req, res) => {
+  res.json({
+    service: 'Email Automation Worker',
+    status: 'running',
+    version: '1.0.0',
+    endpoints: ['/worker/health', '/worker/config/update', '/worker/start', '/worker/stop']
+  });
+});
+
 // Health check endpoint
 app.get('/worker/health', (req, res) => {
   res.json({
@@ -508,11 +518,23 @@ async function incrementCheckCounter(
 // Schedule email checks every minute
 cron.schedule('* * * * *', checkEmails);
 
+// Log all registered routes before starting server
+console.log('=== Registered Routes ===');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+app._router.stack.forEach((middleware: any) => {
+  if (middleware.route) {
+    console.log(`${Object.keys(middleware.route.methods)[0].toUpperCase()} ${middleware.route.path}`);
+  }
+});
+console.log('========================');
+
 // Start server
 app.listen(PORT, () => {
   console.log(`✓ Worker service running on port ${PORT}`);
   console.log(`✓ Health check: http://localhost:${PORT}/worker/health`);
+  console.log(`✓ Root endpoint: http://localhost:${PORT}/`);
   console.log(`✓ Cron job scheduled to run every minute`);
+  console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 export default app;
