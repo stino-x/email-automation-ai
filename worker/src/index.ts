@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { google } from 'googleapis';
 import Groq from 'groq-sdk';
 import { isInSchedule, getMaxChecksForPeriod, generateMonitorIdentifier, generatePeriodIdentifier } from './utils/scheduling';
-import type { UserConfiguration, GoogleTokens, MonitoredEmail } from '../types';
+import type { UserConfiguration, GoogleTokens, MonitoredEmail } from './types';
 
 const app = express();
 const PORT = process.env.PORT || 3001;

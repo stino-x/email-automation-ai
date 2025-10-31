@@ -1,5 +1,5 @@
 import { format, parse } from 'date-fns';
-import type { MonitoredEmail, ScheduleConfig } from '../../types';
+import type { MonitoredEmail, ScheduleConfig } from '../types';
 import { createHash } from 'crypto';
 
 export function isInSchedule(monitor: MonitoredEmail): boolean {
