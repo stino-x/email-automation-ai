@@ -82,6 +82,16 @@ export function Navbar() {
               Dashboard
             </Link>
             <Link
+              href="/configs"
+              className={`text-sm font-medium transition-colors ${
+                pathname === '/configs'
+                  ? 'text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              My Configs
+            </Link>
+            <Link
               href="/configuration"
               className={`text-sm font-medium transition-colors ${
                 pathname === '/configuration'
@@ -89,7 +99,7 @@ export function Navbar() {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Configuration
+              Edit Config
             </Link>
             <Link
               href="/activity"
@@ -162,11 +172,18 @@ export function Navbar() {
               Dashboard
             </Link>
             <Link
+              href="/configs"
+              className="block text-sm font-medium text-gray-300 hover:text-white"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              My Configs
+            </Link>
+            <Link
               href="/configuration"
               className="block text-sm font-medium text-gray-300 hover:text-white"
               onClick={() => setIsMenuOpen(false)}
             >
-              Configuration
+              Edit Config
             </Link>
             <Link
               href="/activity"

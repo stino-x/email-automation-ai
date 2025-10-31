@@ -176,6 +176,36 @@ export default function ConfigurationPage() {
       }
       return newErrors;
     });
+
+    // CRITICAL: If toggling is_active, auto-save immediately to persist the change
+    if ('is_active' in updates && currentUser) {
+      autoSaveToggleState(updated);
+    }
+  };
+
+  // Auto-save when individual monitor toggle changes
+  const autoSaveToggleState = async (updatedMonitors: MonitoredEmail[]) => {
+    try {
+      await fetch('/api/config/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser!.id
+        },
+        body: JSON.stringify({
+          configuration: {
+            monitored_emails: updatedMonitors,
+            ai_prompt_template: aiPrompt,
+            is_active: false,
+            max_emails_per_period: 10,
+            once_per_window: true
+          }
+        })
+      });
+      console.log('[AUTO-SAVE] Individual toggle state saved to database');
+    } catch (error) {
+      console.error('[AUTO-SAVE] Failed to save toggle state:', error);
+    }
   };
 
   const clearConfiguration = async () => {
