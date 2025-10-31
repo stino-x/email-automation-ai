@@ -4,7 +4,6 @@ import {
   getGoogleTokens,
   getAllCheckCounters
 } from '@/lib/supabase/queries';
-import { validateTokens } from '@/lib/google/auth';
 import type { StatusResponse, CheckCountInfo } from '@/types';
 
 export async function GET(request: NextRequest) {
@@ -46,7 +45,9 @@ export async function GET(request: NextRequest) {
     let calendarStatus: 'connected' | 'disconnected' = 'disconnected';
 
     if (googleTokens) {
-      const isValid = await validateTokens(googleTokens);
+      // Check if token hasn't expired
+      const isValid = new Date(googleTokens.expires_at) > new Date();
+      
       if (isValid && googleTokens.scopes.includes('https://www.googleapis.com/auth/gmail.readonly')) {
         gmailStatus = 'connected';
       }
