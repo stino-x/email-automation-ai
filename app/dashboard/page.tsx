@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Mail, Activity, Play, Pause, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
+import { getUser } from '@/lib/auth';
 
 interface DashboardStats {
   total_monitored_emails: number;
@@ -22,6 +23,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
+  const [currentUser, setCurrentUser] = useState<{id: string; email?: string} | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     total_monitored_emails: 0,
     emails_processed_today: 0,
@@ -33,13 +35,19 @@ export default function DashboardPage() {
   const [isToggling, setIsToggling] = useState(false);
 
   useEffect(() => {
-    loadDashboardData();
+    const loadUser = async () => {
+      const user = await getUser();
+      setCurrentUser(user);
+      if (user) {
+        loadDashboardData(user.id);
+      }
+    };
+    loadUser();
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (userId: string) => {
     try {
       setIsLoading(true);
-      const userId = 'demo-user-id';
       
       const configResponse = await fetch('/api/config/get', {
         headers: { 'x-user-id': userId }
@@ -66,14 +74,15 @@ export default function DashboardPage() {
   };
 
   const toggleService = async () => {
+    if (!currentUser) return;
+
     try {
       setIsToggling(true);
-      const userId = 'demo-user-id';
       const endpoint = stats.service_status === 'active' ? '/api/service/stop' : '/api/service/start';
       
       await fetch(endpoint, {
         method: 'POST',
-        headers: { 'x-user-id': userId }
+        headers: { 'x-user-id': currentUser.id }
       });
 
       setStats(prev => ({

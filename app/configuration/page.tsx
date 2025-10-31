@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,9 +13,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { Plus, Trash2, Save, Calendar as CalendarIcon, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { getUser } from '@/lib/auth';
 import type { MonitoredEmail } from '@/types';
 
 export default function ConfigurationPage() {
+  const [currentUser, setCurrentUser] = useState<{id: string; email?: string} | null>(null);
   const [monitors, setMonitors] = useState<MonitoredEmail[]>([]);
   const [aiPrompt, setAiPrompt] = useState(
     'You are my personal assistant. Read this email and respond professionally.\n\n' +
@@ -25,6 +27,14 @@ export default function ConfigurationPage() {
     'Please draft a helpful response.'
   );
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const user = await getUser();
+      setCurrentUser(user);
+    };
+    loadUser();
+  }, []);
 
   const addMonitor = () => {
     const newMonitor: MonitoredEmail = {
@@ -54,15 +64,19 @@ export default function ConfigurationPage() {
   };
 
   const saveConfiguration = async () => {
+    if (!currentUser) {
+      toast.error('Please log in to save configuration');
+      return;
+    }
+
     try {
       setIsSaving(true);
-      const userId = 'demo-user-id';
 
       const response = await fetch('/api/config/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': userId
+          'x-user-id': currentUser.id
         },
         body: JSON.stringify({
           configuration: {

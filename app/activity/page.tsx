@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChevronLeft, ChevronRight, Download, Search } from 'lucide-react';
+import { getUser } from '@/lib/auth';
 import type { ActivityLog } from '@/types';
 
 export default function ActivityPage() {
+  const [currentUser, setCurrentUser] = useState<{id: string; email?: string} | null>(null);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -18,14 +20,25 @@ export default function ActivityPage() {
   const limit = 20;
 
   useEffect(() => {
-    loadLogs();
+    const loadUser = async () => {
+      const user = await getUser();
+      setCurrentUser(user);
+    };
+    loadUser();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadLogs();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, searchEmail]);
+  }, [page, searchEmail, currentUser]);
 
   const loadLogs = async () => {
+    if (!currentUser) return;
+
     try {
       setIsLoading(true);
-      const userId = 'demo-user-id';
       const params = new URLSearchParams({
         page: String(page),
         limit: String(limit),
@@ -33,7 +46,7 @@ export default function ActivityPage() {
       });
 
       const response = await fetch(`/api/logs?${params}`, {
-        headers: { 'x-user-id': userId }
+        headers: { 'x-user-id': currentUser.id }
       });
       const data = await response.json();
 
