@@ -466,7 +466,7 @@ export default function ConfigurationPage() {
                         </div>
                       </TabsContent>
 
-                      <TabsContent value="specific" className="space-y-4 mt-4">
+                      <TabsContent value="specific_dates" className="space-y-4 mt-4">
                         <div>
                           <Label className="mb-2 block">Select Dates</Label>
                           <div className="bg-gray-700 p-4 rounded-md">
