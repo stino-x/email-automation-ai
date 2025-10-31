@@ -37,10 +37,22 @@ const authenticate = (req, res, next) => {
 const activeMonitors = new Map();
 // Helper function to transform database config to worker format
 function transformDatabaseConfig(dbConfig) {
+    // Safety check for monitored_emails
+    if (!dbConfig.monitored_emails || !Array.isArray(dbConfig.monitored_emails)) {
+        return {
+            user_id: dbConfig.user_id,
+            monitored_emails: [],
+            ai_prompt_template: dbConfig.ai_prompt_template || '',
+            is_active: true
+        };
+    }
     return {
-        ...dbConfig,
-        monitored_emails: dbConfig.monitored_emails.map((monitor) => {
-            // Helper to convert day names to numbers
+        user_id: dbConfig.user_id,
+        ai_prompt_template: dbConfig.ai_prompt_template || '',
+        is_active: true,
+        monitored_emails: dbConfig.monitored_emails
+            .filter((monitor) => monitor !== null && monitor !== undefined)
+            .map((monitor) => {
             const dayNameToNumber = (day) => {
                 const dayMap = {
                     'sunday': 0,
@@ -54,26 +66,32 @@ function transformDatabaseConfig(dbConfig) {
                 return dayMap[day.toLowerCase()] ?? 1;
             };
             let schedule;
+            // Validate monitor has proper structure
+            if (!monitor.sender_email) {
+                console.warn('Monitor missing sender_email, skipping');
+                return null;
+            }
             if (monitor.schedule_type === 'recurring' && monitor.recurring_config) {
                 schedule = {
                     type: 'recurring',
-                    days_of_week: monitor.recurring_config.days.map(dayNameToNumber),
-                    time_window_start: monitor.recurring_config.start_time,
-                    time_window_end: monitor.recurring_config.end_time,
-                    check_interval_minutes: monitor.recurring_config.interval_minutes,
-                    max_checks_per_day: monitor.recurring_config.max_checks_per_day
+                    days_of_week: monitor.recurring_config.days?.map(dayNameToNumber) || [1, 2, 3, 4, 5],
+                    time_window_start: monitor.recurring_config.start_time || '09:00',
+                    time_window_end: monitor.recurring_config.end_time || '17:00',
+                    check_interval_minutes: monitor.recurring_config.interval_minutes || 15,
+                    max_checks_per_day: monitor.recurring_config.max_checks_per_day || 30
                 };
             }
             else if (monitor.schedule_type === 'specific_dates' && monitor.specific_dates_config) {
+                const config = monitor.specific_dates_config;
                 schedule = {
                     type: 'specific_dates',
-                    specific_dates: monitor.specific_dates_config.dates.map((date) => ({
+                    specific_dates: config.dates?.map((date) => ({
                         date,
-                        time_window_start: monitor.specific_dates_config.start_time,
-                        time_window_end: monitor.specific_dates_config.end_time,
-                        check_interval_minutes: monitor.specific_dates_config.interval_minutes,
-                        max_checks: monitor.specific_dates_config.max_checks_per_date
-                    }))
+                        time_window_start: config.start_time || '09:00',
+                        time_window_end: config.end_time || '17:00',
+                        check_interval_minutes: config.interval_minutes || 15,
+                        max_checks: config.max_checks_per_date || 30
+                    })) || []
                 };
             }
             else {
@@ -93,7 +111,7 @@ function transformDatabaseConfig(dbConfig) {
                 schedule,
                 stop_after_response: monitor.stop_after_response !== 'never'
             };
-        })
+        }).filter((m) => m !== null) // Remove null entries
     };
 }
 // Root endpoint for testing
@@ -264,10 +282,10 @@ async function checkSingleMonitor(userId, monitor, tokens, promptTemplate) {
         // Log limit reached
         await supabase.from('activity_logs').insert({
             user_id: userId,
-            monitored_email: monitor.email_address,
+            email_checked: monitor.email_address,
             status: 'LIMIT_REACHED',
             check_number: currentCount,
-            max_checks: maxChecks,
+            total_checks_allowed: maxChecks,
         });
         return;
     }
@@ -312,10 +330,10 @@ async function checkSingleMonitor(userId, monitor, tokens, promptTemplate) {
         await incrementCheckCounter(userId, monitorId, periodId, maxChecks);
         await supabase.from('activity_logs').insert({
             user_id: userId,
-            monitored_email: monitor.email_address,
+            email_checked: monitor.email_address,
             status: 'NO_EMAIL',
             check_number: currentCount + 1,
-            max_checks: maxChecks,
+            total_checks_allowed: maxChecks,
         });
         return;
     }
@@ -426,12 +444,12 @@ async function checkSingleMonitor(userId, monitor, tokens, promptTemplate) {
             // 10. Log success
             await supabase.from('activity_logs').insert({
                 user_id: userId,
-                monitored_email: monitor.email_address,
+                email_checked: monitor.email_address,
                 status: 'SENT',
                 check_number: currentCount + 1,
-                max_checks: maxChecks,
-                email_from: from,
-                email_subject: subject,
+                total_checks_allowed: maxChecks,
+                email_subject: `From: ${from} | ${subject}`,
+                email_content: emailBody?.substring(0, 500),
                 ai_response: aiResponse.substring(0, 500), // Store first 500 chars
             });
             // 11. Mark as responded
@@ -457,10 +475,10 @@ async function checkSingleMonitor(userId, monitor, tokens, promptTemplate) {
             console.error(`[${monitor.email_address}] Error processing email:`, error);
             await supabase.from('activity_logs').insert({
                 user_id: userId,
-                monitored_email: monitor.email_address,
+                email_checked: monitor.email_address,
                 status: 'ERROR',
                 check_number: currentCount + 1,
-                max_checks: maxChecks,
+                total_checks_allowed: maxChecks,
                 error_message: error instanceof Error ? error.message : String(error),
             });
         }
@@ -498,6 +516,35 @@ async function incrementCheckCounter(userId, monitorId, periodId, maxChecks) {
 }
 // Schedule email checks every minute
 node_cron_1.default.schedule('* * * * *', checkEmails);
+// Load active configurations from database on startup
+async function loadActiveConfigurations() {
+    try {
+        console.log('[STARTUP] Loading active configurations from database...');
+        const { data: configs, error } = await supabase
+            .from('configurations')
+            .select('*')
+            .eq('is_active', true);
+        if (error) {
+            console.error('[STARTUP] Error loading configurations:', error);
+            return;
+        }
+        if (!configs || configs.length === 0) {
+            console.log('[STARTUP] No active configurations found');
+            return;
+        }
+        for (const config of configs) {
+            const transformedConfig = transformDatabaseConfig(config);
+            activeMonitors.set(config.user_id, transformedConfig);
+            console.log(`[STARTUP] Loaded config for user ${config.user_id} with ${transformedConfig.monitored_emails.length} monitors`);
+        }
+        console.log(`[STARTUP] Loaded ${configs.length} active configuration(s)`);
+    }
+    catch (error) {
+        console.error('[STARTUP] Failed to load configurations:', error);
+    }
+}
+// Load configurations on startup
+loadActiveConfigurations();
 // Log all registered routes before starting server
 console.log('=== Registered Routes ===');
 const router = app._router;
