@@ -13,11 +13,12 @@ const SCOPES = [
   'https://www.googleapis.com/auth/calendar.readonly'
 ];
 
-export function getAuthUrl(): string {
+export function getAuthUrl(state?: string): string {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
-    prompt: 'consent'
+    prompt: 'consent',
+    state: state
   });
 }
 
