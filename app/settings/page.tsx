@@ -213,6 +213,38 @@ export default function SettingsPage() {
     }
   };
 
+  const testTokenInsert = async () => {
+    if (!currentUser) {
+      toast.error('Please log in first');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/test-token-insert', {
+        method: 'POST',
+        headers: { 'x-user-id': currentUser.id }
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('✅ Token insert test passed!', {
+          description: 'Service role key is working correctly',
+          duration: 5000
+        });
+      } else {
+        toast.error('❌ Token insert test failed', {
+          description: data.error || 'Check console for details',
+          duration: 10000
+        });
+        console.error('Test failed:', data);
+      }
+    } catch (error) {
+      toast.error('Test request failed');
+      console.error('Test error:', error);
+    }
+  };
+
   const getStatusIcon = (state: string) => {
     if (state === 'connected' || state === 'valid') {
       return <CheckCircle2 className="w-5 h-5 text-green-500" />;

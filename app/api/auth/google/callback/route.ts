@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTokensFromCode, getUserEmail } from '@/lib/google/auth';
+import { getTokensFromCode } from '@/lib/google/auth';
 import { saveGoogleTokens } from '@/lib/supabase/queries';
 import type { GoogleAuthResponse } from '@/types';
 
@@ -38,11 +38,7 @@ export async function GET(request: NextRequest) {
       scopes: tokens.scopes
     });
 
-    // Get user's Gmail address for confirmation
-    await getUserEmail(tokens);
-    console.log('User email verified');
-
-    // Save tokens to database
+    // Save tokens to database (skip email verification - not needed)
     console.log('Saving tokens to database for user:', userId);
     await saveGoogleTokens(tokens);
     console.log('Tokens saved successfully');
