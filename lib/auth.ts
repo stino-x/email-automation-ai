@@ -17,6 +17,27 @@ export async function signUp(email: string, password: string) {
   });
 
   if (error) throw error;
+
+  // Create user in custom users table
+  if (data.user) {
+    console.log('Creating user record in custom users table:', data.user.id, email);
+    const { error: userError } = await supabase
+      .from('users')
+      .insert({
+        id: data.user.id,
+        email: email
+      })
+      .select()
+      .single();
+
+    if (userError) {
+      console.error('Error creating user record:', userError);
+      // Don't throw - auth was successful, just log the error
+    } else {
+      console.log('User record created successfully');
+    }
+  }
+
   return data;
 }
 
@@ -27,6 +48,36 @@ export async function signIn(email: string, password: string) {
   });
 
   if (error) throw error;
+
+  // Ensure user exists in custom users table (in case they signed up before tables were created)
+  if (data.user) {
+    console.log('Checking/creating user record for:', data.user.id, email);
+    const { error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', data.user.id)
+      .single();
+
+    if (checkError && checkError.code === 'PGRST116') {
+      // User doesn't exist, create it
+      console.log('User not found in custom table, creating...');
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: data.user.id,
+          email: email
+        });
+
+      if (insertError) {
+        console.error('Error creating user record on login:', insertError);
+      } else {
+        console.log('User record created successfully on login');
+      }
+    } else if (!checkError) {
+      console.log('User record already exists');
+    }
+  }
+
   return data;
 }
 
