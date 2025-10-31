@@ -106,13 +106,21 @@ export async function updateServiceStatus(userId: string, isActive: boolean): Pr
 
 // Google tokens operations
 export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
-  const { data: existing } = await supabase
+  console.log('saveGoogleTokens called for user:', tokens.user_id);
+  
+  const { data: existing, error: selectError } = await supabase
     .from('google_tokens')
     .select('*')
     .eq('user_id', tokens.user_id)
     .single();
 
+  console.log('Existing tokens found:', !!existing);
+  if (selectError && selectError.code !== 'PGRST116') {
+    console.error('Error checking for existing tokens:', selectError);
+  }
+
   if (existing) {
+    console.log('Updating existing tokens...');
     const { error } = await supabase
       .from('google_tokens')
       .update({
@@ -123,13 +131,22 @@ export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'create
       })
       .eq('user_id', tokens.user_id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating tokens:', error);
+      throw error;
+    }
+    console.log('Tokens updated successfully');
   } else {
+    console.log('Inserting new tokens...');
     const { error } = await supabase
       .from('google_tokens')
       .insert(tokens);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error inserting tokens:', error);
+      throw error;
+    }
+    console.log('Tokens inserted successfully');
   }
 }
 
