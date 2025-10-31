@@ -1,45 +1,54 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/client';
-import { supabase as authClient } from '@/lib/auth';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    // Get the currently authenticated user
-    const { data: { user }, error: authError } = await authClient.auth.getUser();
+    const userId = request.headers.get('x-user-id');
     
-    if (authError || !user) {
+    if (!userId) {
       return NextResponse.json(
-        { success: false, message: 'Not authenticated' },
-        { status: 401 }
+        { success: false, message: 'User ID required in headers' },
+        { status: 400 }
       );
     }
 
-    console.log('Syncing user to database:', user.id, user.email);
+    console.log('Syncing user to database:', userId);
 
     const supabase = getServerClient();
 
     // Check if user already exists
     const { data: existingUser } = await supabase
       .from('users')
-      .select('id')
-      .eq('id', user.id)
+      .select('id, email')
+      .eq('id', userId)
       .single();
 
     if (existingUser) {
       return NextResponse.json({
         success: true,
         message: 'User already exists in database',
-        user_id: user.id,
-        email: user.email
+        user_id: existingUser.id,
+        email: existingUser.email
       });
+    }
+
+    // User doesn't exist in custom table - need to get email from body or auth
+    const body = await request.json().catch(() => ({}));
+    const email = body.email;
+
+    if (!email) {
+      return NextResponse.json(
+        { success: false, message: 'Email required when creating new user' },
+        { status: 400 }
+      );
     }
 
     // Create user in custom users table
     const { error: insertError } = await supabase
       .from('users')
       .insert({
-        id: user.id,
-        email: user.email
+        id: userId,
+        email: email
       });
 
     if (insertError) {
@@ -55,8 +64,8 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       message: 'User synced to database successfully',
-      user_id: user.id,
-      email: user.email
+      user_id: userId,
+      email: email
     });
 
   } catch (error) {

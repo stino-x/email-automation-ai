@@ -181,9 +181,19 @@ export default function SettingsPage() {
   };
 
   const syncUserToDatabase = async () => {
+    if (!currentUser) {
+      toast.error('Please log in first');
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/sync-user', {
-        method: 'POST'
+        method: 'POST',
+        headers: { 
+          'x-user-id': currentUser.id,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: currentUser.email })
       });
 
       const data = await response.json();
