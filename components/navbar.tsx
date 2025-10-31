@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LogOut, User, Menu, X } from 'lucide-react';
-import { getUser, signOut } from '@/lib/auth';
+import { getUser, signOut, supabase } from '@/lib/auth';
 import { toast } from 'sonner';
 
 export function Navbar() {
@@ -13,14 +13,34 @@ export function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<{ id: string; email: string | undefined } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Initial check
     const checkUser = async () => {
       const currentUser = await getUser();
       setUser(currentUser);
+      setIsLoading(false);
     };
     
     checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email
+        });
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -95,7 +115,9 @@ export function Navbar() {
 
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            {user ? (
+            {isLoading ? (
+              <div className="text-gray-400 text-sm">Loading...</div>
+            ) : user ? (
               <>
                 <div className="flex items-center space-x-2 text-sm">
                   <User className="w-4 h-4 text-gray-400" />
@@ -160,7 +182,9 @@ export function Navbar() {
             >
               Settings
             </Link>
-            {user && (
+            {isLoading ? (
+              <div className="text-sm text-gray-400 pt-2">Loading...</div>
+            ) : user ? (
               <>
                 <div className="text-sm text-gray-400 pt-2 border-t border-gray-800">
                   {user.email}
@@ -175,6 +199,12 @@ export function Navbar() {
                   Logout
                 </Button>
               </>
+            ) : (
+              <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="outline" size="sm" className="w-full">
+                  Login
+                </Button>
+              </Link>
             )}
           </div>
         )}
