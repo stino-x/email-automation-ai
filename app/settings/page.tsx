@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, XCircle, Loader2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { getUser } from '@/lib/auth';
 
 interface SystemStatus {
   database: 'connected' | 'disconnected' | 'error';
@@ -19,15 +20,29 @@ export default function SettingsPage() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{id: string; email?: string} | null>(null);
 
-  useEffect(() => {
-    loadStatus();
+  const loadUserAndStatus = useCallback(async () => {
+    try {
+      // Get current user
+      const user = await getUser();
+      setCurrentUser(user);
+
+      if (user) {
+        loadStatus(user.id);
+      }
+    } catch (error) {
+      console.error('Failed to load user:', error);
+    }
   }, []);
 
-  const loadStatus = async () => {
+  useEffect(() => {
+    loadUserAndStatus();
+  }, [loadUserAndStatus]);
+
+  const loadStatus = async (userId: string) => {
     try {
       setIsLoading(true);
-      const userId = 'demo-user-id';
       const response = await fetch('/api/status', {
         headers: { 'x-user-id': userId }
       });
@@ -41,35 +56,56 @@ export default function SettingsPage() {
   };
 
   const connectGoogle = () => {
+    if (!currentUser) {
+      toast.error('Please log in first');
+      return;
+    }
     setIsConnecting(true);
-    window.location.href = '/api/auth/google';
+    window.location.href = `/api/auth/google?user_id=${currentUser.id}`;
   };
 
   const disconnectGoogle = async () => {
+    if (!currentUser) {
+      toast.error('Please log in first');
+      return;
+    }
+
     try {
-      const userId = 'demo-user-id';
       const response = await fetch('/api/auth/google', {
         method: 'DELETE',
-        headers: { 'x-user-id': userId }
+        headers: { 'x-user-id': currentUser.id }
       });
 
       if (response.ok) {
         toast.success('Google account disconnected');
-        loadStatus();
+        loadStatus(currentUser.id);
       } else {
         toast.error('Failed to disconnect');
       }
-    } catch {
-      toast.error('Error disconnecting Google account');
+    } catch (error) {
+      toast.error('Failed to disconnect Google account');
+      console.error('Error disconnecting Google account:', error);
+    }
+  };
+
+  const refreshStatus = () => {
+    if (currentUser) {
+      loadStatus(currentUser.id);
+    } else {
+      toast.error('Please log in first');
     }
   };
 
   const testEmailProcessing = async () => {
+    if (!currentUser) {
+      toast.error('Please log in first');
+      return;
+    }
+
     try {
-      const userId = 'demo-user-id';
       const response = await fetch('/api/test', {
         method: 'POST',
-        headers: { 'x-user-id': userId }
+        headers: { 'x-user-id': currentUser.id }
       });
 
       const data = await response.json();
@@ -219,7 +255,7 @@ export default function SettingsPage() {
             <Button onClick={testEmailProcessing} variant="outline" className="w-full">
               Run Test Email Check
             </Button>
-            <Button onClick={loadStatus} variant="outline" className="w-full">
+            <Button onClick={refreshStatus} variant="outline" className="w-full">
               Refresh Status
             </Button>
           </CardContent>
