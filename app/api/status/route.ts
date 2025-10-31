@@ -31,11 +31,13 @@ export async function GET(request: NextRequest) {
         const response = await fetch(`${process.env.WORKER_WEBHOOK_URL}/worker/health`, {
           headers: {
             'Authorization': `Bearer ${process.env.WORKER_SECRET}`
-          }
+          },
+          signal: AbortSignal.timeout(5000) // 5 second timeout
         });
-        workerStatus = response.ok ? 'connected' : 'error';
+        workerStatus = response.ok ? 'connected' : 'disconnected';
       } catch {
-        workerStatus = 'error';
+        // If it's a timeout or network error, mark as disconnected not error
+        workerStatus = 'disconnected';
       }
     }
 
