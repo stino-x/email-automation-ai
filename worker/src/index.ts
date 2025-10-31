@@ -291,7 +291,18 @@ async function checkEmails() {
   console.log('[CRON] Running email checks at', new Date().toISOString());
 
   for (const [userId, config] of activeMonitors.entries()) {
-    if (!config.is_active) continue;
+    // STRICT RULE 1: IMMEDIATELY respect pause toggle - check database every time
+    const { data: dbConfig } = await supabase
+      .from('configurations')
+      .select('is_active')
+      .eq('user_id', userId)
+      .single();
+
+    if (!dbConfig || !dbConfig.is_active) {
+      console.log(`[USER ${userId}] ⏸️  MONITORING PAUSED - Skipping all checks`);
+      activeMonitors.delete(userId); // Clean up inactive monitors
+      continue;
+    }
 
     console.log(`[USER ${userId}] Checking ${config.monitored_emails.length} monitors`);
 
@@ -429,16 +440,16 @@ async function checkSingleMonitor(
   // 6. Process each email
   for (const message of messages.messages) {
     try {
-      // Check if already responded
+      // STRICT RULE 2: NEVER reply to the same email twice - check database
       const { data: responded } = await supabase
         .from('responded_emails')
         .select('*')
         .eq('user_id', userId)
         .eq('email_id', message.id!)
-        .single();
+        .maybeSingle();
 
       if (responded) {
-        console.log(`[${monitor.email_address}] Already responded to ${message.id}`);
+        console.log(`[${monitor.email_address}] 🚫 ALREADY RESPONDED to email ${message.id} - Skipping to prevent duplicate reply`);
         continue;
       }
 
@@ -562,13 +573,17 @@ async function checkSingleMonitor(
         ai_response: aiResponse.substring(0, 500), // Store first 500 chars
       });
 
-      // 11. Mark as responded
+      // 11. Mark as responded - STRICT: Track to prevent duplicate replies
+      const windowId = generatePeriodIdentifier();
       await supabase.from('responded_emails').insert({
         user_id: userId,
         email_id: message.id!,
         monitored_email: monitor.email_address,
         sender_email: senderEmail,
+        window_identifier: windowId,
       });
+      
+      console.log(`[${monitor.email_address}] ✅ Marked email ${message.id} as responded - Will NEVER reply again`);
 
       // 12. Check stop-after-response
       if (monitor.stop_after_response) {
