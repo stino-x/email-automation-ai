@@ -3,17 +3,17 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Activity, Play, Pause, TrendingUp } from 'lucide-react';
+import { Mail, Activity, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { getUser } from '@/lib/auth';
 
 interface DashboardStats {
   total_monitored_emails: number;
+  active_monitors: number;
+  paused_monitors: number;
   emails_processed_today: number;
   emails_processed_this_week: number;
-  service_status: 'active' | 'paused';
   recent_activity: Array<{
     status: string;
     email_checked: string;
@@ -26,13 +26,13 @@ export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<{id: string; email?: string} | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     total_monitored_emails: 0,
+    active_monitors: 0,
+    paused_monitors: 0,
     emails_processed_today: 0,
     emails_processed_this_week: 0,
-    service_status: 'paused',
     recent_activity: []
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [isToggling, setIsToggling] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -59,40 +59,23 @@ export default function DashboardPage() {
       });
       const logsData = await logsResponse.json();
 
+      // Count active vs paused monitors
+      const monitors = configData.configuration?.monitored_emails || [];
+      const activeCount = monitors.filter((m: {is_active?: boolean}) => m.is_active !== false).length;
+      const pausedCount = monitors.length - activeCount;
+
       setStats({
-        total_monitored_emails: configData.configuration?.monitored_emails?.length || 0,
+        total_monitored_emails: monitors.length,
+        active_monitors: activeCount,
+        paused_monitors: pausedCount,
         emails_processed_today: 0,
         emails_processed_this_week: 0,
-        service_status: configData.configuration?.is_active ? 'active' : 'paused',
         recent_activity: logsData.logs || []
       });
     } catch (error) {
       console.error('Failed to load dashboard:', error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const toggleService = async () => {
-    if (!currentUser) return;
-
-    try {
-      setIsToggling(true);
-      const endpoint = stats.service_status === 'active' ? '/api/service/stop' : '/api/service/start';
-      
-      await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'x-user-id': currentUser.id }
-      });
-
-      setStats(prev => ({
-        ...prev,
-        service_status: prev.service_status === 'active' ? 'paused' : 'active'
-      }));
-    } catch (error) {
-      console.error('Failed to toggle service:', error);
-    } finally {
-      setIsToggling(false);
     }
   };
 
@@ -114,22 +97,23 @@ export default function DashboardPage() {
             <div className="flex justify-between items-center">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  {stats.service_status === 'active' ? (
-                    <Play className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <Pause className="w-5 h-5 text-gray-500" />
-                  )}
-                  Service Status
+                  <Activity className="w-5 h-5 text-blue-500" />
+                  Monitor Status
                 </CardTitle>
                 <CardDescription>
-                  {stats.service_status === 'active' ? 'Monitoring active' : 'Monitoring paused'}
+                  Individual monitor controls available in configuration page
                 </CardDescription>
               </div>
-              <Switch
-                checked={stats.service_status === 'active'}
-                onCheckedChange={toggleService}
-                disabled={isToggling}
-              />
+              <div className="flex gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-400">{stats.active_monitors}</div>
+                  <div className="text-xs text-gray-400">Active</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-500">{stats.paused_monitors}</div>
+                  <div className="text-xs text-gray-400">Paused</div>
+                </div>
+              </div>
             </div>
           </CardHeader>
         </Card>

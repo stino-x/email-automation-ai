@@ -13,6 +13,7 @@ export interface MonitoredEmail {
   schedule: ScheduleConfig;
   stop_after_response?: boolean;
   is_active?: boolean; // Individual toggle for each monitor
+  receiving_email?: string; // Which Gmail account receives/monitors this email
 }
 
 export interface ScheduleConfig {
@@ -48,6 +49,8 @@ export interface GoogleTokens {
   token_type: string;
   expires_at: string;
   scope: string;
+  google_email?: string; // The Google account email (for multi-account support)
+  account_label?: string; // User-friendly label for the account
 }
 
 export interface ActivityLog {

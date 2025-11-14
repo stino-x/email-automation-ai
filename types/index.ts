@@ -25,6 +25,7 @@ export interface SpecificDatesConfig {
 export interface MonitoredEmail {
   id?: string;
   sender_email: string;
+  receiving_email?: string; // Which Gmail account receives/monitors this (YOUR email)
   keywords?: string[];
   schedule_type: ScheduleType;
   recurring_config?: RecurringConfig;
@@ -57,6 +58,8 @@ export interface GoogleTokens {
   refresh_token: string;
   expires_at: string;
   scopes: string[];
+  google_email?: string; // The Google account email address
+  account_label?: string; // User-friendly label (e.g., "Work Email")
   created_at?: string;
   updated_at?: string;
 }

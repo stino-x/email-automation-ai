@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
-import { Plus, Trash2, Save, Calendar as CalendarIcon, X, AlertCircle, Download } from 'lucide-react';
+import { Plus, Trash2, Save, Calendar as CalendarIcon, X, AlertCircle, Download, ChevronDown, ChevronUp, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getUser } from '@/lib/auth';
@@ -76,6 +77,7 @@ function validateMonitor(monitor: MonitoredEmail): string[] {
 export default function ConfigurationPage() {
   const [currentUser, setCurrentUser] = useState<{id: string; email?: string} | null>(null);
   const [monitors, setMonitors] = useState<MonitoredEmail[]>([]);
+  const [expandedMonitors, setExpandedMonitors] = useState<Set<number>>(new Set());
   const [validationErrors, setValidationErrors] = useState<Record<number, string[]>>({});
   const [aiPrompt, setAiPrompt] = useState(
     'You are my personal AI assistant. Read this email and respond professionally on my behalf.\n\n' +
@@ -94,20 +96,7 @@ export default function ConfigurationPage() {
   );
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const user = await getUser();
-      setCurrentUser(user);
-      
-      // Auto-load existing configuration if user is logged in
-      if (user) {
-        loadConfiguration(user.id);
-      }
-    };
-    loadUser();
-  }, []);
-
-  const loadConfiguration = async (userId: string) => {
+  const loadConfiguration = useCallback(async (userId: string) => {
     try {
       const response = await fetch('/api/config/get', {
         headers: {
@@ -126,7 +115,20 @@ export default function ConfigurationPage() {
     } catch (error) {
       console.error('Error loading configuration:', error);
     }
-  };
+  }, [aiPrompt]);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const user = await getUser();
+      setCurrentUser(user);
+      
+      // Auto-load existing configuration if user is logged in
+      if (user) {
+        loadConfiguration(user.id);
+      }
+    };
+    loadUser();
+  }, [loadConfiguration]);
 
   const addMonitor = () => {
     const newMonitor: MonitoredEmail = {
@@ -141,14 +143,25 @@ export default function ConfigurationPage() {
         max_checks_per_day: 30
       },
       stop_after_response: 'never',
-      is_active: true // New monitors are active by default
+      is_active: true, // New monitors are active by default
+      receiving_email: currentUser?.email || '' // Default to current user's email
     };
-    setMonitors([...monitors, newMonitor]);
+    const newMonitors = [...monitors, newMonitor];
+    setMonitors(newMonitors);
+    // Expand the newly added monitor
+    setExpandedMonitors(new Set([newMonitors.length - 1]));
   };
 
   const removeMonitor = (index: number) => {
     const newMonitors = monitors.filter((_, i) => i !== index);
     setMonitors(newMonitors);
+    // Update expanded monitors indices
+    const newExpanded = new Set<number>();
+    expandedMonitors.forEach(i => {
+      if (i < index) newExpanded.add(i);
+      else if (i > index) newExpanded.add(i - 1);
+    });
+    setExpandedMonitors(newExpanded);
     // Re-validate all monitors
     const newErrors: Record<number, string[]> = {};
     newMonitors.forEach((m, i) => {
@@ -158,6 +171,16 @@ export default function ConfigurationPage() {
       }
     });
     setValidationErrors(newErrors);
+  };
+
+  const toggleMonitorExpansion = (index: number) => {
+    const newExpanded = new Set(expandedMonitors);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedMonitors(newExpanded);
   };
 
   const updateMonitor = (index: number, updates: Partial<MonitoredEmail>) => {
@@ -322,80 +345,129 @@ export default function ConfigurationPage() {
             <CardDescription>Add email addresses to monitor and configure schedules</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {monitors.map((monitor, index) => (
-              <Card key={index} className="bg-gray-800 border-gray-700">
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-4">
-                      <h3 className="text-lg font-semibold">Monitor #{index + 1}</h3>
-                      <div className="flex items-center gap-2">
+            {monitors.map((monitor, index) => {
+              const isExpanded = expandedMonitors.has(index);
+              
+              return (
+                <Card key={index} className="bg-gray-800 border-gray-700">
+                  <CardContent className="pt-6">
+                    {/* Compact Header - Always Visible */}
+                    <div 
+                      className="flex justify-between items-center cursor-pointer mb-4"
+                      onClick={() => toggleMonitorExpansion(index)}
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <Button variant="ghost" size="sm" className="p-0 h-auto">
+                          {isExpanded ? (
+                            <ChevronUp className="w-5 h-5" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5" />
+                          )}
+                        </Button>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium">
+                              {monitor.sender_email || <span className="text-gray-500 italic">No email set</span>}
+                            </span>
+                          </div>
+                          {monitor.receiving_email && (
+                            <Badge variant="outline" className="text-xs">
+                              → {monitor.receiving_email}
+                            </Badge>
+                          )}
+                          <Badge className={monitor.is_active ?? true ? 'bg-green-600' : 'bg-gray-600'}>
+                            {monitor.is_active ?? true ? 'Active' : 'Paused'}
+                          </Badge>
+                          {validationErrors[index] && validationErrors[index].length > 0 && (
+                            <Badge variant="destructive" className="text-xs">
+                              {validationErrors[index].length} error{validationErrors[index].length > 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <Switch
                           checked={monitor.is_active ?? true}
                           onCheckedChange={(checked) => 
                             updateMonitor(index, { is_active: checked })
                           }
                         />
-                        <Label className="text-sm">
-                          {monitor.is_active ?? true ? '🟢 Active' : '⏸️ Paused'}
-                        </Label>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeMonitor(index);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeMonitor(index)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
 
-                  <div className="space-y-4">
-                    {/* Validation Errors Display */}
-                    {validationErrors[index] && validationErrors[index].length > 0 && (
-                      <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
-                        <div className="flex items-start gap-2">
-                          <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
-                          <div className="flex-1">
-                            <p className="font-semibold text-red-400 mb-1">Please fix these issues:</p>
-                            <ul className="list-disc list-inside space-y-1 text-sm text-red-300">
-                              {validationErrors[index].map((error, i) => (
-                                <li key={i}>{error}</li>
-                              ))}
-                            </ul>
+                    {/* Expanded Details */}
+                    {isExpanded && (
+                      <div className="space-y-4 border-t border-gray-700 pt-4">
+                        {/* Validation Errors Display */}
+                        {validationErrors[index] && validationErrors[index].length > 0 && (
+                          <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
+                              <div className="flex-1">
+                                <p className="font-semibold text-red-400 mb-1">Please fix these issues:</p>
+                                <ul className="list-disc list-inside space-y-1 text-sm text-red-300">
+                                  {validationErrors[index].map((error, i) => (
+                                    <li key={i}>{error}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
                           </div>
+                        )}
+
+                        <div>
+                          <Label>Sender Email Address *</Label>
+                          <Input
+                            placeholder="sender@example.com"
+                            value={monitor.sender_email}
+                            onChange={(e) => updateMonitor(index, { sender_email: e.target.value })}
+                            className={`bg-gray-700 border-gray-600 ${
+                              validationErrors[index]?.some(e => e.includes('email')) 
+                                ? 'border-red-500 focus:border-red-500' 
+                                : ''
+                            }`}
+                          />
+                          <p className="text-xs text-gray-400 mt-1">The email address you want to monitor for incoming messages</p>
                         </div>
-                      </div>
-                    )}
 
-                    <div>
-                      <Label>Sender Email Address *</Label>
-                      <Input
-                        placeholder="sender@example.com"
-                        value={monitor.sender_email}
-                        onChange={(e) => updateMonitor(index, { sender_email: e.target.value })}
-                        className={`bg-gray-700 border-gray-600 ${
-                          validationErrors[index]?.some(e => e.includes('email')) 
-                            ? 'border-red-500 focus:border-red-500' 
-                            : ''
-                        }`}
-                      />
-                      <p className="text-xs text-gray-400 mt-1">The email address you want to monitor for incoming messages</p>
-                    </div>
+                        <div>
+                          <Label>Receiving Gmail Account *</Label>
+                          <Input
+                            placeholder={currentUser?.email || "your-email@gmail.com"}
+                            value={monitor.receiving_email || ''}
+                            onChange={(e) => updateMonitor(index, { receiving_email: e.target.value })}
+                            className="bg-gray-700 border-gray-600"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">
+                            Which Gmail account receives emails from this sender (default: {currentUser?.email || 'your primary account'})
+                          </p>
+                        </div>
 
-                    <div>
-                      <Label>Subject Keywords (optional, comma-separated)</Label>
-                      <Input
-                        placeholder="urgent, meeting, important"
-                        value={monitor.keywords?.join(', ') || ''}
-                        onChange={(e) =>
-                          updateMonitor(index, {
-                            keywords: e.target.value.split(',').map(k => k.trim()).filter(Boolean)
-                          })
-                        }
-                        className="bg-gray-700 border-gray-600"
-                      />
-                      <p className="text-xs text-gray-400 mt-1">Leave empty to monitor all emails from this sender</p>
-                    </div>
+                        <div>
+                          <Label>Subject Keywords (optional, comma-separated)</Label>
+                          <Input
+                            placeholder="urgent, meeting, important"
+                            value={monitor.keywords?.join(', ') || ''}
+                            onChange={(e) =>
+                              updateMonitor(index, {
+                                keywords: e.target.value.split(',').map(k => k.trim()).filter(Boolean)
+                              })
+                            }
+                            className="bg-gray-700 border-gray-600"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">Leave empty to monitor all emails from this sender</p>
+                        </div>
 
                     <div>
                       <Label>Schedule Type *</Label>
@@ -980,10 +1052,12 @@ export default function ConfigurationPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
 
             <Button onClick={addMonitor} variant="outline" className="w-full">
               <Plus className="w-4 h-4 mr-2" />

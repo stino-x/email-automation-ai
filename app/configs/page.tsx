@@ -169,9 +169,19 @@ export default function ConfigsPage() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h4 className="font-semibold text-lg">{monitor.sender_email}</h4>
-                        <p className="text-sm text-gray-400">
-                          Schedule: {monitor.schedule_type}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-sm text-gray-400">
+                            Schedule: {monitor.schedule_type}
+                          </p>
+                          {monitor.receiving_email && (
+                            <>
+                              <span className="text-gray-600">•</span>
+                              <Badge variant="outline" className="text-xs">
+                                → {monitor.receiving_email}
+                              </Badge>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <Badge variant={monitor.is_active === false ? 'secondary' : 'default'}>
                         {monitor.is_active === false ? '⏸️ Paused' : '🟢 Active'}

@@ -25,6 +25,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "facebook-chat-api": "^1.8.0",
     "googleapis": "^164.1.0",
     "groq-sdk": "^0.34.0",
     "lucide-react": "^0.548.0",
