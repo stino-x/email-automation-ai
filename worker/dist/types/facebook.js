@@ -1,3 +1,3 @@
 "use strict";
-// Core types for Email Automation Application
+// Facebook Messenger Monitoring Types
 Object.defineProperty(exports, "__esModule", { value: true });
