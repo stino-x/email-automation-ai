@@ -1,0 +1,22 @@
+# 🔐 IMPORTANT: Add these to your .env file
+
+# Copy the lines below and add them to your .env or .env.local file
+# Replace the placeholder values with your own secure credentials
+
+# ==============================================
+# FACEBOOK MONITORING AUTHENTICATION
+# ==============================================
+
+FACEBOOK_AUTH_USERNAME=your_username_here
+FACEBOOK_AUTH_PASSWORD=your_password_here
+
+# Example (choose your own):
+# FACEBOOK_AUTH_USERNAME=admin
+# FACEBOOK_AUTH_PASSWORD=SecurePass123!
+
+# ⚠️ IMPORTANT NOTES:
+# - These are NOT your Facebook login credentials
+# - These are static credentials just for accessing the Facebook section of this app
+# - Choose ANY username and password you want
+# - Keep them secure and private
+# - You'll need these every time you access /facebook in your app

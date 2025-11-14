@@ -112,6 +112,16 @@ export function Navbar() {
               Activity Logs
             </Link>
             <Link
+              href="/facebook"
+              className={`text-sm font-medium transition-colors ${
+                pathname === '/facebook' || pathname === '/facebook/activity'
+                  ? 'text-blue-500'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Facebook 🔒
+            </Link>
+            <Link
               href="/settings"
               className={`text-sm font-medium transition-colors ${
                 pathname === '/settings'
@@ -191,6 +201,13 @@ export function Navbar() {
               onClick={() => setIsMenuOpen(false)}
             >
               Activity Logs
+            </Link>
+            <Link
+              href="/facebook"
+              className="block text-sm font-medium text-blue-500 hover:text-blue-400"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Facebook 🔒
             </Link>
             <Link
               href="/settings"
