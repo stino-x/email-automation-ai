@@ -4,7 +4,7 @@
   "description": "Background worker for email automation",
   "main": "dist/index.js",
   "scripts": {
-    "prebuild": "node -e \"const fs=require('fs');const path=require('path');['lib','types'].forEach(d=>{const src=path.join('..',d);const dest=path.join('.',d);if(fs.existsSync(src)){fs.cpSync(src,dest,{recursive:true,force:true})}})\"",
+    "prebuild": "node -e \"const fs=require('fs');const path=require('path');[{src:'lib',dest:'src-lib'},{src:'types',dest:'src-types'}].forEach(({src,dest})=>{const srcPath=path.join('..',src);const destPath=path.join('.',dest);try{if(fs.existsSync(destPath)){fs.rmSync(destPath,{recursive:true,force:true})}}catch(e){}if(fs.existsSync(srcPath)){fs.cpSync(srcPath,destPath,{recursive:true,force:true})}})\"",
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts"
