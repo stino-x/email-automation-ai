@@ -1,7 +1,7 @@
 // Facebook Worker Integration
 // Add this to your existing worker/src/index.ts
 
-import { FacebookClient } from '../../lib/facebook/client';
+import { FacebookClient } from '../../lib/facebook/client.js';
 import type { FacebookConfiguration, FacebookMonitor, FacebookMessage } from '../../types/facebook';
 import { createClient } from '@supabase/supabase-js';
 import Groq from 'groq-sdk';
@@ -64,8 +64,8 @@ async function startFacebookMonitoring(userId: string): Promise<{ success: boole
 
     // Start listening for messages
     fbClient.listenForMessages(
-      (message) => handleFacebookMessage(userId, message),
-      (error) => console.error(`[FB ${userId}] Listen error:`, error)
+      (message: FacebookMessage) => handleFacebookMessage(userId, message),
+      (error: Error) => console.error(`[FB ${userId}] Listen error:`, error)
     );
 
     console.log(`[FB ${userId}] Started monitoring ${config.monitors.length} conversations`);
@@ -97,7 +97,7 @@ async function handleFacebookMessage(userId: string, message: FacebookMessage): 
 
   try {
     // Find matching monitor configuration
-    const matchingMonitor = config.monitors.find(m => 
+    const matchingMonitor = config.monitors.find((m: FacebookMonitor) => 
       m.thread_id === message.threadId && m.is_active
     );
 
@@ -112,7 +112,7 @@ async function handleFacebookMessage(userId: string, message: FacebookMessage): 
 
     // Check keywords if specified
     if (matchingMonitor.keywords && matchingMonitor.keywords.length > 0) {
-      const hasKeyword = matchingMonitor.keywords.some(keyword =>
+      const hasKeyword = matchingMonitor.keywords.some((keyword: string) =>
         message.body.toLowerCase().includes(keyword.toLowerCase())
       );
       
