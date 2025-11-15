@@ -7,30 +7,50 @@ export type StopAfterResponse = 'never' | 'rest_of_day' | 'rest_of_window' | 'ne
 export type LogStatus = 'NEW_EMAIL' | 'NO_EMAIL' | 'SENT' | 'ERROR' | 'LIMIT_REACHED';
 
 export interface RecurringConfig {
-  days: string[]; // ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-  start_time: string; // HH:mm format
-  end_time: string; // HH:mm format
-  interval_minutes: number; // 1, 2, 5, 10, 15, 30, 60
-  max_checks_per_day: number;
+  days?: string[]; // ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+  start_time?: string; // HH:mm format
+  end_time?: string; // HH:mm format
+  interval_minutes?: number; // 1, 2, 5, 10, 15, 30, 60
+  max_checks_per_day?: number;
 }
 
 export interface SpecificDatesConfig {
-  dates: string[]; // ['YYYY-MM-DD']
-  start_time: string; // HH:mm format
-  end_time: string; // HH:mm format
-  interval_minutes: number;
-  max_checks_per_date: number;
+  dates?: string[]; // ['YYYY-MM-DD']
+  start_time?: string; // HH:mm format
+  end_time?: string; // HH:mm format
+  interval_minutes?: number;
+  max_checks_per_date?: number;
+}
+
+export interface ScheduleConfig {
+  type: ScheduleType;
+  days_of_week?: number[];
+  time_window_start?: string;
+  time_window_end?: string;
+  check_interval_minutes?: number;
+  max_checks_per_day?: number;
+  specific_dates?: Array<{
+    date: string;
+    time_window_start: string;
+    time_window_end: string;
+    check_interval_minutes: number;
+    max_checks: number;
+  }>;
+  recurring_config?: ScheduleConfig;
+  specific_config?: ScheduleConfig;
 }
 
 export interface MonitoredEmail {
   id?: string;
+  email_address: string;
   sender_email: string;
   receiving_email?: string; // Which Gmail account receives/monitors this (YOUR email)
   keywords?: string[];
-  schedule_type: ScheduleType;
+  schedule: ScheduleConfig;
+  schedule_type?: ScheduleType;
   recurring_config?: RecurringConfig;
   specific_dates_config?: SpecificDatesConfig;
-  stop_after_response: StopAfterResponse;
+  stop_after_response: boolean | StopAfterResponse;
   is_active?: boolean; // Individual toggle for each monitor
 }
 
@@ -40,8 +60,8 @@ export interface UserConfiguration {
   monitored_emails: MonitoredEmail[];
   ai_prompt_template: string;
   is_active: boolean;
-  max_emails_per_period: number;
-  once_per_window: boolean;
+  max_emails_per_period?: number;
+  once_per_window?: boolean;
   updated_at?: string;
 }
 

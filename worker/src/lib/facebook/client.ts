@@ -1,6 +1,6 @@
 // Facebook Messenger Client
 // This module handles Facebook Messenger API interactions
-import type { FacebookMessage, FacebookThread } from '@/types/facebook';
+import type { FacebookMessage, FacebookThread } from '../../types/facebook';
 import facebookChatApi from 'facebook-chat-api';
 
 interface FacebookRawMessage {
