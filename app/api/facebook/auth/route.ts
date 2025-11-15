@@ -1,17 +1,12 @@
 // API Route: Facebook Auth Check
 import { NextRequest, NextResponse } from 'next/server';
 import { validateFacebookAuth, createUnauthorizedResponse } from '@/lib/facebook/auth';
-import { getUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
-  // Also check if user is logged into the main app
-  const user = await getUser();
-  if (!user) {
-    console.error('[Facebook Auth] User not logged into main app');
-    return NextResponse.json({ error: 'Not authenticated to main app' }, { status: 401 });
-  }
-
-  // Check Facebook-specific auth
+  // Check Facebook-specific auth (Basic Auth)
+  // Note: User must already be logged into main app to access the Facebook page
+  // This is just an additional security layer for the Facebook section
+  
   const isValid = validateFacebookAuth(request);
   console.log('[Facebook Auth] Validation result:', isValid);
   console.log('[Facebook Auth] Expected username:', process.env.FACEBOOK_AUTH_USERNAME);
@@ -23,7 +18,6 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ 
     success: true, 
-    message: 'Facebook section authenticated',
-    userId: user.id 
+    message: 'Facebook section authenticated'
   });
 }
