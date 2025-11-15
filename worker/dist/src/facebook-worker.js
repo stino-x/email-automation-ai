@@ -8,7 +8,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activeFacebookMonitors = void 0;
 exports.startFacebookMonitoring = startFacebookMonitoring;
 exports.stopFacebookMonitoring = stopFacebookMonitoring;
-const client_1 = require("../src-lib/facebook/client");
+const client_1 = require("./lib/facebook/client");
 const supabase_js_1 = require("@supabase/supabase-js");
 const groq_sdk_1 = __importDefault(require("groq-sdk"));
 // Initialize clients
