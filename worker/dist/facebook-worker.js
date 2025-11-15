@@ -174,6 +174,7 @@ async function handleFacebookMessage(userId, message) {
  */
 async function generateFacebookResponse(userMessage, promptTemplate, userId, calendarId = 'primary') {
     let finalPrompt = promptTemplate;
+    let oauth2Client = null;
     // Check if calendar is needed
     if (finalPrompt.includes('{CALENDAR_EVENTS}')) {
         try {
@@ -185,7 +186,7 @@ async function generateFacebookResponse(userMessage, promptTemplate, userId, cal
                 .single();
             if (tokenData) {
                 const { google } = await Promise.resolve().then(() => __importStar(require('googleapis')));
-                const oauth2Client = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
+                oauth2Client = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
                 oauth2Client.setCredentials({
                     access_token: tokenData.access_token,
                     refresh_token: tokenData.refresh_token,
@@ -217,12 +218,27 @@ async function generateFacebookResponse(userMessage, promptTemplate, userId, cal
             finalPrompt = finalPrompt.replace(/\{CALENDAR_EVENTS\}/g, 'Unable to fetch calendar.');
         }
     }
+    // Enhanced prompt with calendar event creation instructions
+    const enhancedPrompt = `${finalPrompt}
+
+IMPORTANT: If the conversation involves scheduling or confirming an event/meeting, respond in JSON format:
+{
+  "response": "your message response text here",
+  "create_event": {
+    "summary": "Event title",
+    "description": "Event description",
+    "start_datetime": "2024-01-15T14:00:00Z",
+    "end_datetime": "2024-01-15T15:00:00Z"
+  }
+}
+
+If NO event needs to be created, respond with plain text (no JSON).`;
     const completion = await groq.chat.completions.create({
         model: 'llama-3.1-70b-versatile',
         messages: [
             {
                 role: 'system',
-                content: finalPrompt
+                content: enhancedPrompt
             },
             {
                 role: 'user',
@@ -232,7 +248,46 @@ async function generateFacebookResponse(userMessage, promptTemplate, userId, cal
         temperature: 0.7,
         max_tokens: 500
     });
-    return completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+    const aiResponseRaw = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+    // Parse response - check if it's JSON with calendar event
+    let aiResponse = aiResponseRaw;
+    let calendarEvent = null;
+    try {
+        // Try to parse as JSON
+        const jsonMatch = aiResponseRaw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.response && parsed.create_event) {
+                aiResponse = parsed.response;
+                calendarEvent = parsed.create_event;
+                console.log(`[Facebook] Calendar event detected in response`);
+            }
+        }
+    }
+    catch {
+        // Not JSON, treat as plain text response
+    }
+    // Create calendar event if requested and oauth client is available
+    if (calendarEvent && oauth2Client) {
+        const { createCalendarEvent } = await Promise.resolve().then(() => __importStar(require('@/lib/utils/calendar')));
+        const result = await createCalendarEvent(oauth2Client, calendarId, {
+            summary: calendarEvent.summary,
+            description: calendarEvent.description,
+            startDateTime: calendarEvent.start_datetime,
+            endDateTime: calendarEvent.end_datetime,
+        });
+        if (result.success) {
+            console.log(`[Facebook] ✅ Calendar event created: ${result.eventId}`);
+            // Append event confirmation to response
+            if (result.eventLink) {
+                aiResponse += `\n\n📅 Event created: ${result.eventLink}`;
+            }
+        }
+        else {
+            console.error(`[Facebook] ❌ Failed to create calendar event: ${result.error}`);
+        }
+    }
+    return aiResponse;
 }
 /**
  * Log Facebook activity

@@ -26,7 +26,20 @@ export default function FacebookMonitoringPage() {
 
   const [config, setConfig] = useState<FacebookConfiguration | null>(null);
   const [monitors, setMonitors] = useState<FacebookMonitor[]>([]);
-  const [defaultPrompt, setDefaultPrompt] = useState('You are a helpful assistant. Respond naturally and conversationally to this message.');
+  const [defaultPrompt, setDefaultPrompt] = useState(
+    'You are a helpful assistant. Respond naturally and conversationally to this message.\n\n' +
+    'Available placeholder: {CALENDAR_EVENTS}\n\n' +
+    'CALENDAR EVENT CREATION:\n' +
+    'When confirming a meeting, respond with:\n' +
+    '{\n' +
+    '  "response": "Sounds good! See you Tuesday at 2pm",\n' +
+    '  "create_event": {\n' +
+    '    "summary": "Meeting",\n' +
+    '    "start_datetime": "2024-01-15T14:00:00Z",\n' +
+    '    "end_datetime": "2024-01-15T15:00:00Z"\n' +
+    '  }\n' +
+    '}'
+  );
   const [checkInterval, setCheckInterval] = useState(60);
   const [calendarId, setCalendarId] = useState('primary');
   const [isActive, setIsActive] = useState(false);

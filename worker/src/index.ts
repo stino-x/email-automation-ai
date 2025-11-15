@@ -569,23 +569,86 @@ async function checkSingleMonitor(
         prompt = prompt.replace(/\{CALENDAR_EVENTS\}/g, formattedEvents);
       }
 
+      // Enhanced prompt with calendar event creation instructions
+      const enhancedPrompt = `${prompt}
+
+IMPORTANT: If the conversation involves scheduling or confirming an event/meeting, respond in JSON format:
+{
+  "response": "your email response text here",
+  "create_event": {
+    "summary": "Event title",
+    "description": "Event description",
+    "start_datetime": "2024-01-15T14:00:00Z",
+    "end_datetime": "2024-01-15T15:00:00Z",
+    "attendees": ["email@example.com"]
+  }
+}
+
+If NO event needs to be created, respond with plain text (no JSON).
+
+Examples:
+- "Let's meet Tuesday at 2pm" → Create event
+- "Thanks for your email" → Plain text
+- "Can we schedule a call?" → Ask for time, don't create yet`;
+
       // Use model from env so we can rotate models without code changes
       const groqModel = process.env.GROQ_MODEL || 'llama-3.1-70b-versatile';
       const completion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content: enhancedPrompt }],
         model: groqModel,
         temperature: 0.7,
         max_tokens: 1024,
       });
 
-      const aiResponse = completion.choices[0]?.message?.content || '';
+      const aiResponseRaw = completion.choices[0]?.message?.content || '';
 
-      if (!aiResponse) {
+      if (!aiResponseRaw) {
         console.log(`[${monitor.email_address}] No AI response generated`);
         continue;
       }
 
+      // Parse response - check if it's JSON with calendar event
+      let aiResponse = aiResponseRaw;
+      let calendarEvent: { summary: string; description?: string; start_datetime: string; end_datetime: string; attendees?: string[] } | null = null;
+
+      try {
+        // Try to parse as JSON
+        const jsonMatch = aiResponseRaw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.response && parsed.create_event) {
+            aiResponse = parsed.response;
+            calendarEvent = parsed.create_event;
+            console.log(`[${monitor.email_address}] Calendar event detected in response`);
+          }
+        }
+      } catch {
+        // Not JSON, treat as plain text response
+      }
+
       console.log(`[${monitor.email_address}] AI response generated (${aiResponse.length} chars)`);
+
+      // Create calendar event if requested
+      if (calendarEvent && calendarId) {
+        const { createCalendarEvent } = await import('@/lib/utils/calendar');
+        const result = await createCalendarEvent(oauth2Client, calendarId, {
+          summary: calendarEvent.summary,
+          description: calendarEvent.description,
+          startDateTime: calendarEvent.start_datetime,
+          endDateTime: calendarEvent.end_datetime,
+          attendees: calendarEvent.attendees,
+        });
+
+        if (result.success) {
+          console.log(`[${monitor.email_address}] ✅ Calendar event created: ${result.eventId}`);
+          // Append event link to response
+          if (result.eventLink) {
+            aiResponse += `\n\n📅 Event created: ${result.eventLink}`;
+          }
+        } else {
+          console.error(`[${monitor.email_address}] ❌ Failed to create calendar event: ${result.error}`);
+        }
+      }
 
       // 8. Send email response
       const rawEmail = [

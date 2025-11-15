@@ -91,7 +91,20 @@ export default function ConfigurationPage() {
     '2. If asked about availability on a specific date/time, look for conflicts in the calendar\n' +
     '3. If I have an event at that time, say I\'m NOT available and suggest alternative times\n' +
     '4. If no calendar events conflict, confirm I AM available\n' +
-    '5. Be professional, helpful, and accurate about my schedule\n\n' +
+    '5. If confirming a meeting/event, create a calendar event by responding in JSON format\n' +
+    '6. Be professional, helpful, and accurate about my schedule\n\n' +
+    'CALENDAR EVENT CREATION:\n' +
+    'When confirming a meeting, respond with:\n' +
+    '{\n' +
+    '  "response": "Great! I\'ve scheduled our meeting for Tuesday at 2pm.",\n' +
+    '  "create_event": {\n' +
+    '    "summary": "Meeting with John",\n' +
+    '    "description": "Discuss project details",\n' +
+    '    "start_datetime": "2024-01-15T14:00:00Z",\n' +
+    '    "end_datetime": "2024-01-15T15:00:00Z",\n' +
+    '    "attendees": ["sender@email.com"]\n' +
+    '  }\n' +
+    '}\n\n' +
     'Draft a helpful and accurate response based on the email content and my calendar.'
   );
   const [calendarId, setCalendarId] = useState('primary');

@@ -17,7 +17,8 @@ const SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/gmail.modify', // Needed to mark emails as read
-    'https://www.googleapis.com/auth/calendar.readonly'
+    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/calendar.events' // Needed to create/modify calendar events
 ];
 function getAuthUrl(state) {
     return oauth2Client.generateAuthUrl({

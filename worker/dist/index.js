@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -459,20 +492,80 @@ async function checkSingleMonitor(userId, monitor, tokens, promptTemplate, calen
                 }).join('\n');
                 prompt = prompt.replace(/\{CALENDAR_EVENTS\}/g, formattedEvents);
             }
+            // Enhanced prompt with calendar event creation instructions
+            const enhancedPrompt = `${prompt}
+
+IMPORTANT: If the conversation involves scheduling or confirming an event/meeting, respond in JSON format:
+{
+  "response": "your email response text here",
+  "create_event": {
+    "summary": "Event title",
+    "description": "Event description",
+    "start_datetime": "2024-01-15T14:00:00Z",
+    "end_datetime": "2024-01-15T15:00:00Z",
+    "attendees": ["email@example.com"]
+  }
+}
+
+If NO event needs to be created, respond with plain text (no JSON).
+
+Examples:
+- "Let's meet Tuesday at 2pm" → Create event
+- "Thanks for your email" → Plain text
+- "Can we schedule a call?" → Ask for time, don't create yet`;
             // Use model from env so we can rotate models without code changes
             const groqModel = process.env.GROQ_MODEL || 'llama-3.1-70b-versatile';
             const completion = await groq.chat.completions.create({
-                messages: [{ role: 'user', content: prompt }],
+                messages: [{ role: 'user', content: enhancedPrompt }],
                 model: groqModel,
                 temperature: 0.7,
                 max_tokens: 1024,
             });
-            const aiResponse = completion.choices[0]?.message?.content || '';
-            if (!aiResponse) {
+            const aiResponseRaw = completion.choices[0]?.message?.content || '';
+            if (!aiResponseRaw) {
                 console.log(`[${monitor.email_address}] No AI response generated`);
                 continue;
             }
+            // Parse response - check if it's JSON with calendar event
+            let aiResponse = aiResponseRaw;
+            let calendarEvent = null;
+            try {
+                // Try to parse as JSON
+                const jsonMatch = aiResponseRaw.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    if (parsed.response && parsed.create_event) {
+                        aiResponse = parsed.response;
+                        calendarEvent = parsed.create_event;
+                        console.log(`[${monitor.email_address}] Calendar event detected in response`);
+                    }
+                }
+            }
+            catch {
+                // Not JSON, treat as plain text response
+            }
             console.log(`[${monitor.email_address}] AI response generated (${aiResponse.length} chars)`);
+            // Create calendar event if requested
+            if (calendarEvent && calendarId) {
+                const { createCalendarEvent } = await Promise.resolve().then(() => __importStar(require('@/lib/utils/calendar')));
+                const result = await createCalendarEvent(oauth2Client, calendarId, {
+                    summary: calendarEvent.summary,
+                    description: calendarEvent.description,
+                    startDateTime: calendarEvent.start_datetime,
+                    endDateTime: calendarEvent.end_datetime,
+                    attendees: calendarEvent.attendees,
+                });
+                if (result.success) {
+                    console.log(`[${monitor.email_address}] ✅ Calendar event created: ${result.eventId}`);
+                    // Append event link to response
+                    if (result.eventLink) {
+                        aiResponse += `\n\n📅 Event created: ${result.eventLink}`;
+                    }
+                }
+                else {
+                    console.error(`[${monitor.email_address}] ❌ Failed to create calendar event: ${result.error}`);
+                }
+            }
             // 8. Send email response
             const rawEmail = [
                 `To: ${senderEmail}`,
