@@ -103,20 +103,20 @@ export function getMaxChecksForPeriod(monitor: MonitoredEmail, periodIdentifier:
   // Period identifier format: "YYYY-MM-DD" or "YYYY-WXX-dayname"
   
   if (monitor.schedule_type === 'recurring' && monitor.recurring_config) {
-    return monitor.recurring_config.max_checks_per_day;
+    return monitor.recurring_config.max_checks_per_day ?? Infinity;
   }
 
   if (monitor.schedule_type === 'specific_dates' && monitor.specific_dates_config) {
-    return monitor.specific_dates_config.max_checks_per_date;
+    return monitor.specific_dates_config.max_checks_per_date ?? Infinity;
   }
 
   if (monitor.schedule_type === 'hybrid') {
     // Check if periodIdentifier matches a specific date
     if (monitor.specific_dates_config?.dates.includes(periodIdentifier)) {
-      return monitor.specific_dates_config.max_checks_per_date;
+      return monitor.specific_dates_config.max_checks_per_date ?? Infinity;
     }
     // Otherwise use recurring max
-    return monitor.recurring_config?.max_checks_per_day || 100;
+    return monitor.recurring_config?.max_checks_per_day ?? Infinity;
   }
 
   return 100; // Default
@@ -159,7 +159,7 @@ export function estimateSchedule(monitor: MonitoredEmail): ScheduleEstimate {
       config.interval_minutes
     );
     
-    estimate.checks_per_day = Math.min(checksPerDay, config.max_checks_per_day);
+    estimate.checks_per_day = config.max_checks_per_day ? Math.min(checksPerDay, config.max_checks_per_day) : checksPerDay;
     estimate.checks_per_week = estimate.checks_per_day * config.days.length;
   }
 
@@ -171,7 +171,7 @@ export function estimateSchedule(monitor: MonitoredEmail): ScheduleEstimate {
       config.interval_minutes
     );
     
-    const maxPerDate = Math.min(checksPerDate, config.max_checks_per_date);
+    const maxPerDate = config.max_checks_per_date ? Math.min(checksPerDate, config.max_checks_per_date) : checksPerDate;
     estimate.total_checks = maxPerDate * config.dates.length;
   }
 
@@ -185,7 +185,7 @@ export function estimateSchedule(monitor: MonitoredEmail): ScheduleEstimate {
         config.end_time,
         config.interval_minutes
       );
-      estimate.checks_per_day = Math.min(checksPerDay, config.max_checks_per_day);
+      estimate.checks_per_day = config.max_checks_per_day ? Math.min(checksPerDay, config.max_checks_per_day) : checksPerDay;
       estimate.checks_per_week = estimate.checks_per_day * config.days.length;
       totalChecks += estimate.checks_per_week;
     }
@@ -197,7 +197,7 @@ export function estimateSchedule(monitor: MonitoredEmail): ScheduleEstimate {
         config.end_time,
         config.interval_minutes
       );
-      const maxPerDate = Math.min(checksPerDate, config.max_checks_per_date);
+      const maxPerDate = config.max_checks_per_date ? Math.min(checksPerDate, config.max_checks_per_date) : checksPerDate;
       totalChecks += maxPerDate * config.dates.length;
     }
 
@@ -261,7 +261,7 @@ export function validateScheduleConfig(monitor: MonitoredEmail): { valid: boolea
       if (!monitor.recurring_config.days || monitor.recurring_config.days.length === 0) {
         errors.push('At least one day must be selected for recurring schedule');
       }
-      if (monitor.recurring_config.max_checks_per_day < 1) {
+      if (monitor.recurring_config.max_checks_per_day !== undefined && monitor.recurring_config.max_checks_per_day < 1) {
         errors.push('Maximum checks per day must be at least 1');
       }
       if (monitor.recurring_config.interval_minutes < 1) {
@@ -277,7 +277,7 @@ export function validateScheduleConfig(monitor: MonitoredEmail): { valid: boolea
       if (!monitor.specific_dates_config.dates || monitor.specific_dates_config.dates.length === 0) {
         errors.push('At least one date must be selected');
       }
-      if (monitor.specific_dates_config.max_checks_per_date < 1) {
+      if (monitor.specific_dates_config.max_checks_per_date !== undefined && monitor.specific_dates_config.max_checks_per_date < 1) {
         errors.push('Maximum checks per date must be at least 1');
       }
       if (monitor.specific_dates_config.interval_minutes < 1) {
