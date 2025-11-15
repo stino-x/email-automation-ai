@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { 
   getConfiguration, 
   getGoogleTokens,
+  getAllGoogleTokens,
   getAllCheckCounters
 } from '@/lib/supabase/queries';
 import type { StatusResponse, CheckCountInfo } from '@/types';
@@ -74,6 +75,15 @@ export async function GET(request: NextRequest) {
       percentage: (counter.current_count / counter.max_count) * 100
     }));
 
+    // Get all connected Google accounts
+    const allGoogleAccounts = await getAllGoogleTokens(userId);
+    const googleAccounts = allGoogleAccounts.map(token => ({
+      email: token.google_email || 'Primary Account',
+      is_valid: new Date(token.expires_at) > new Date(),
+      created_at: token.created_at,
+      account_label: token.account_label || 'Primary Account'
+    }));
+
     return NextResponse.json({
       success: true,
       database: databaseStatus,
@@ -81,7 +91,8 @@ export async function GET(request: NextRequest) {
       google_gmail: gmailStatus,
       google_calendar: calendarStatus,
       groq_api: groqStatus,
-      check_counts: checkCounts
+      check_counts: checkCounts,
+      google_accounts: googleAccounts
     } as StatusResponse);
 
   } catch (error) {

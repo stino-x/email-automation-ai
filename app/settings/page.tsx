@@ -14,6 +14,12 @@ interface SystemStatus {
   google_gmail: 'connected' | 'disconnected';
   google_calendar: 'connected' | 'disconnected';
   groq_api: 'valid' | 'invalid' | 'missing';
+  google_accounts?: {
+    email: string;
+    is_valid: boolean;
+    created_at: string;
+    account_label: string;
+  }[];
 }
 
 export default function SettingsPage() {
@@ -340,28 +346,34 @@ export default function SettingsPage() {
               Connect multiple Gmail accounts to monitor different inboxes. Each email monitor configuration can use a different receiving account.
             </div>
             
-            {/* Primary Account */}
-            {status?.google_gmail === 'connected' && (
-              <div className="p-4 bg-gray-800 rounded-lg border-2 border-blue-500/50">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon('connected')}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{currentUser?.email || 'Primary Account'}</p>
-                        <Badge className="bg-blue-600 text-xs">Primary</Badge>
+            {/* Connected Accounts */}
+            {status?.google_accounts && status.google_accounts.length > 0 ? (
+              <div className="space-y-3">
+                {status.google_accounts.map((account, index: number) => (
+                  <div key={index} className={`p-4 bg-gray-800 rounded-lg border-2 ${index === 0 ? 'border-blue-500/50' : 'border-gray-700'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(account.is_valid ? 'connected' : 'disconnected')}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{account.email}</p>
+                            {index === 0 && <Badge className="bg-blue-600 text-xs">Primary</Badge>}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {account.is_valid ? 'Gmail • Calendar • Active' : 'Token expired - reconnect needed'}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">Gmail • Calendar • Default account</p>
+                      <Button onClick={disconnectGoogle} variant="outline" size="sm">
+                        Disconnect
+                      </Button>
                     </div>
                   </div>
-                  <Button onClick={disconnectGoogle} variant="outline" size="sm">
-                    Disconnect
-                  </Button>
-                </div>
+                ))}
               </div>
-            )}
+            ) : null}
 
-            {/* Additional Accounts - Coming Soon */}
+            {/* Add Another Account Button */}
             <div className="p-4 bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-700">
               <div className="text-center py-4">
                 <p className="text-sm font-medium text-gray-400 mb-2">Additional Gmail Accounts</p>
@@ -376,7 +388,7 @@ export default function SettingsPage() {
 
             <div className="text-xs text-gray-500 p-3 bg-gray-800/50 rounded">
               <strong>✅ Multi-Account Support Enabled:</strong> You can connect multiple Gmail accounts and specify which account monitors which sender. 
-              Each email monitor in the configuration can be assigned to a different Gmail account using the "Receiving Gmail Account" field.
+              Each email monitor in the configuration can be assigned to a different Gmail account using the &quot;Receiving Gmail Account&quot; field.
             </div>
           </CardContent>
         </Card>

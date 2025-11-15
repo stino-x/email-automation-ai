@@ -190,6 +190,44 @@ export async function getGoogleTokens(userId: string): Promise<GoogleTokens | nu
   return data;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export async function getAllGoogleTokens(userId: string): Promise<GoogleTokens[]> {
+  const { data, error } = await supabase
+    .from('google_tokens')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching all Google tokens:', error);
+    return [];
+  }
+  return data || [];
+}
+
 export async function deleteGoogleTokens(userId: string): Promise<void> {
   const { error } = await supabase
     .from('google_tokens')
