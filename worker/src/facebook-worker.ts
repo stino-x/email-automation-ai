@@ -1,7 +1,7 @@
 // Facebook Worker Integration
 // Add this to your existing worker/src/index.ts
 
-import { FacebookClient } from '../src-lib/facebook/client.js';
+import { FacebookClient } from '../src-lib/facebook/client';
 import type { FacebookConfiguration, FacebookMonitor, FacebookMessage } from '../src-types/facebook';
 import { createClient } from '@supabase/supabase-js';
 import Groq from 'groq-sdk';
