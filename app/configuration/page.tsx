@@ -109,6 +109,7 @@ export default function ConfigurationPage() {
   );
   const [calendarId, setCalendarId] = useState('primary');
   const [isSaving, setIsSaving] = useState(false);
+  const [hasLoadedConfig, setHasLoadedConfig] = useState(false);
 
   const loadConfiguration = useCallback(async (userId: string) => {
     try {
@@ -122,28 +123,34 @@ export default function ConfigurationPage() {
         const data = await response.json();
         if (data.configuration && data.configuration.monitored_emails.length > 0) {
           setMonitors(data.configuration.monitored_emails);
-          setAiPrompt(data.configuration.ai_prompt_template || aiPrompt);
-          setCalendarId(data.configuration.calendar_id || 'primary');
+          // Only update these if they exist in the saved config
+          if (data.configuration.ai_prompt_template) {
+            setAiPrompt(data.configuration.ai_prompt_template);
+          }
+          if (data.configuration.calendar_id) {
+            setCalendarId(data.configuration.calendar_id);
+          }
+          setHasLoadedConfig(true);
           toast.success('Configuration loaded successfully!');
         }
       }
     } catch (error) {
       console.error('Error loading configuration:', error);
     }
-  }, [aiPrompt]);
+  }, []);
 
   useEffect(() => {
     const loadUser = async () => {
       const user = await getUser();
       setCurrentUser(user);
       
-      // Auto-load existing configuration if user is logged in
-      if (user) {
+      // Auto-load existing configuration if user is logged in (only once)
+      if (user && !hasLoadedConfig) {
         loadConfiguration(user.id);
       }
     };
     loadUser();
-  }, [loadConfiguration]);
+  }, [loadConfiguration, hasLoadedConfig]);
 
   const addMonitor = () => {
     const newMonitor: MonitoredEmail = {
@@ -562,7 +569,10 @@ export default function ConfigurationPage() {
                               onChange={(e) =>
                                 updateMonitor(index, {
                                   recurring_config: {
-                                    ...monitor.recurring_config!,
+                                    days: monitor.recurring_config?.days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                                    interval_minutes: monitor.recurring_config?.interval_minutes || 15,
+                                    max_checks_per_day: monitor.recurring_config?.max_checks_per_day ?? 30,
+                                    end_time: monitor.recurring_config?.end_time || '17:00',
                                     start_time: e.target.value
                                   }
                                 })
@@ -578,7 +588,10 @@ export default function ConfigurationPage() {
                               onChange={(e) =>
                                 updateMonitor(index, {
                                   recurring_config: {
-                                    ...monitor.recurring_config!,
+                                    days: monitor.recurring_config?.days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                                    interval_minutes: monitor.recurring_config?.interval_minutes || 15,
+                                    max_checks_per_day: monitor.recurring_config?.max_checks_per_day ?? 30,
+                                    start_time: monitor.recurring_config?.start_time || '09:00',
                                     end_time: e.target.value
                                   }
                                 })
@@ -841,7 +854,10 @@ export default function ConfigurationPage() {
                                     updateMonitor(index, {
                                       schedule_type: 'hybrid',
                                       recurring_config: {
-                                        ...monitor.recurring_config!,
+                                        days: monitor.recurring_config?.days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                                        interval_minutes: monitor.recurring_config?.interval_minutes || 15,
+                                        max_checks_per_day: monitor.recurring_config?.max_checks_per_day ?? 30,
+                                        end_time: monitor.recurring_config?.end_time || '17:00',
                                         start_time: e.target.value
                                       }
                                     })
@@ -858,7 +874,10 @@ export default function ConfigurationPage() {
                                     updateMonitor(index, {
                                       schedule_type: 'hybrid',
                                       recurring_config: {
-                                        ...monitor.recurring_config!,
+                                        days: monitor.recurring_config?.days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                                        interval_minutes: monitor.recurring_config?.interval_minutes || 15,
+                                        max_checks_per_day: monitor.recurring_config?.max_checks_per_day ?? 30,
+                                        start_time: monitor.recurring_config?.start_time || '09:00',
                                         end_time: e.target.value
                                       }
                                     })
