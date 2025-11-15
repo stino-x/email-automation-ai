@@ -4,15 +4,21 @@ import { validateFacebookAuth, createUnauthorizedResponse } from '@/lib/facebook
 import { getUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
-  // Check Facebook-specific auth
-  if (!validateFacebookAuth(request)) {
-    return createUnauthorizedResponse();
-  }
-
   // Also check if user is logged into the main app
   const user = await getUser();
   if (!user) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    console.error('[Facebook Auth] User not logged into main app');
+    return NextResponse.json({ error: 'Not authenticated to main app' }, { status: 401 });
+  }
+
+  // Check Facebook-specific auth
+  const isValid = validateFacebookAuth(request);
+  console.log('[Facebook Auth] Validation result:', isValid);
+  console.log('[Facebook Auth] Expected username:', process.env.FACEBOOK_AUTH_USERNAME);
+  console.log('[Facebook Auth] Has password env:', !!process.env.FACEBOOK_AUTH_PASSWORD);
+  
+  if (!isValid) {
+    return createUnauthorizedResponse();
   }
 
   return NextResponse.json({ 
