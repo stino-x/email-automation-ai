@@ -8,7 +8,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activeFacebookMonitors = void 0;
 exports.startFacebookMonitoring = startFacebookMonitoring;
 exports.stopFacebookMonitoring = stopFacebookMonitoring;
-const client_js_1 = require("../../lib/facebook/client.js");
+const client_1 = require("./lib/facebook/client");
 const supabase_js_1 = require("@supabase/supabase-js");
 const groq_sdk_1 = __importDefault(require("groq-sdk"));
 // Initialize clients
@@ -45,7 +45,7 @@ async function startFacebookMonitoring(userId) {
             return { success: false, message: 'Facebook credentials not found' };
         }
         // Initialize Facebook client
-        const fbClient = new client_js_1.FacebookClient(credentials.app_state);
+        const fbClient = new client_1.FacebookClient(credentials.app_state);
         await fbClient.initialize();
         // Store active monitor
         activeFacebookMonitors.set(userId, {

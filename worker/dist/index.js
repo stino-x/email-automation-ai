@@ -107,11 +107,15 @@ function transformDatabaseConfig(dbConfig) {
             }
             return {
                 email_address: monitor.sender_email,
+                sender_email: monitor.sender_email,
                 keywords: monitor.keywords || [],
                 schedule,
                 stop_after_response: monitor.stop_after_response !== 'never',
                 is_active: monitor.is_active ?? true, // Include is_active
-                receiving_email: monitor.receiving_email // Include receiving_email for multi-account support
+                receiving_email: monitor.receiving_email, // Include receiving_email for multi-account support
+                schedule_type: monitor.schedule_type,
+                recurring_config: monitor.recurring_config,
+                specific_dates_config: monitor.specific_dates_config
             };
         }).filter((m) => m !== null) // Remove null entries
     };
