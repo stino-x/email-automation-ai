@@ -355,10 +355,12 @@ async function checkEmails() {
       // If receivingEmail is null, fetch primary account (first one, or the one without google_email)
       // For backward compatibility, if google_email column doesn't exist, this will still work
 
-      const { data: tokens } = await tokensQuery.single();
+      const { data: tokens, error: tokenError } = await tokensQuery.single();
 
       if (!tokens) {
-        console.log(`[USER ${userId}] No Google tokens found for account ${receivingEmail || 'primary'}, skipping ${monitorsForAccount.length} monitors`);
+        console.log(`[USER ${userId}] ⚠️  No Google tokens found for account ${receivingEmail || 'primary'}, skipping ${monitorsForAccount.length} monitors`);
+        console.log(`[USER ${userId}] 💡 To fix: Go to Settings and click "Add Another Account" to connect ${receivingEmail}`);
+        if (tokenError) console.log(`[USER ${userId}] Token error:`, tokenError.message);
         continue;
       }
 

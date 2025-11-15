@@ -366,17 +366,17 @@ export default function SettingsPage() {
               <div className="text-center py-4">
                 <p className="text-sm font-medium text-gray-400 mb-2">Additional Gmail Accounts</p>
                 <p className="text-xs text-gray-500 mb-4">
-                  Support for multiple Gmail accounts coming soon. You&apos;ll be able to monitor work@gmail.com, personal@gmail.com, etc.
+                  Connect multiple Gmail accounts to monitor different inboxes. Each monitor can specify which account receives the emails.
                 </p>
-                <Button variant="outline" size="sm" disabled>
+                <Button variant="outline" size="sm" onClick={connectGoogle}>
                   + Add Another Account
                 </Button>
               </div>
             </div>
 
             <div className="text-xs text-gray-500 p-3 bg-gray-800/50 rounded">
-              <strong>Note:</strong> Currently, one Gmail account can monitor multiple sender email addresses. 
-              Multi-account support (monitoring multiple Gmail inboxes) is in development.
+              <strong>✅ Multi-Account Support Enabled:</strong> You can connect multiple Gmail accounts and specify which account monitors which sender. 
+              Each email monitor in the configuration can be assigned to a different Gmail account using the "Receiving Gmail Account" field.
             </div>
           </CardContent>
         </Card>

@@ -280,7 +280,7 @@ export default function ConfigurationPage() {
             is_active: false,
             max_emails_per_period: 10,
             once_per_window: true,
-            calendar_id: 'primary'
+            calendar_id: calendarId
           }
         })
       });
