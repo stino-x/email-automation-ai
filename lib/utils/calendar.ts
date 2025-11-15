@@ -1,5 +1,4 @@
 import { google } from 'googleapis';
-import type { OAuth2Client } from 'google-auth-library';
 
 export interface CalendarEventInput {
   summary: string;
@@ -21,7 +20,8 @@ export interface CalendarEventResult {
  * Create a new event in Google Calendar
  */
 export async function createCalendarEvent(
-  oauth2Client: OAuth2Client,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  oauth2Client: any,
   calendarId: string,
   eventData: CalendarEventInput
 ): Promise<CalendarEventResult> {
@@ -49,8 +49,8 @@ export async function createCalendarEvent(
 
     return {
       success: true,
-      eventId: response.data.id,
-      eventLink: response.data.htmlLink,
+      eventId: response.data.id || undefined,
+      eventLink: response.data.htmlLink || undefined,
     };
   } catch (error) {
     console.error('Failed to create calendar event:', error);
@@ -65,7 +65,8 @@ export async function createCalendarEvent(
  * Check if a time slot has conflicts with existing events
  */
 export async function checkTimeSlotAvailability(
-  oauth2Client: OAuth2Client,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  oauth2Client: any,
   calendarId: string,
   startDateTime: string,
   endDateTime: string

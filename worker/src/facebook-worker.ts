@@ -191,7 +191,8 @@ async function generateFacebookResponse(
   calendarId: string = 'primary'
 ): Promise<string> {
   let finalPrompt = promptTemplate;
-  let oauth2Client: import('google-auth-library').OAuth2Client | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let oauth2Client: any = null;
 
   // Check if calendar is needed
   if (finalPrompt.includes('{CALENDAR_EVENTS}')) {
