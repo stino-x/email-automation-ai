@@ -161,8 +161,8 @@ export default function ConfigurationPage() {
         days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
         start_time: '09:00',
         end_time: '17:00',
-        interval_minutes: 15,
-        max_checks_per_day: 30
+        interval_minutes: 15
+        // max_checks_per_day is now optional - unlimited by default
       },
       stop_after_response: 'never',
       is_active: true, // New monitors are active by default
@@ -571,7 +571,7 @@ export default function ConfigurationPage() {
                                   recurring_config: {
                                     days: monitor.recurring_config?.days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
                                     interval_minutes: monitor.recurring_config?.interval_minutes || 15,
-                                    max_checks_per_day: monitor.recurring_config?.max_checks_per_day ?? 30,
+                                    max_checks_per_day: monitor.recurring_config?.max_checks_per_day,
                                     end_time: monitor.recurring_config?.end_time || '17:00',
                                     start_time: e.target.value
                                   }
@@ -590,7 +590,7 @@ export default function ConfigurationPage() {
                                   recurring_config: {
                                     days: monitor.recurring_config?.days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
                                     interval_minutes: monitor.recurring_config?.interval_minutes || 15,
-                                    max_checks_per_day: monitor.recurring_config?.max_checks_per_day ?? 30,
+                                    max_checks_per_day: monitor.recurring_config?.max_checks_per_day,
                                     start_time: monitor.recurring_config?.start_time || '09:00',
                                     end_time: e.target.value
                                   }
@@ -631,20 +631,22 @@ export default function ConfigurationPage() {
                             </Select>
                           </div>
                           <div>
-                            <Label>Max Checks Per Day</Label>
+                            <Label>Max Checks Per Day (Optional)</Label>
                             <Input
                               type="number"
-                              value={monitor.recurring_config?.max_checks_per_day ?? 30}
+                              placeholder="Unlimited"
+                              value={monitor.recurring_config?.max_checks_per_day ?? ''}
                               onChange={(e) =>
                                 updateMonitor(index, {
                                   recurring_config: {
                                     ...monitor.recurring_config!,
-                                    max_checks_per_day: e.target.value === '' ? 0 : parseInt(e.target.value)
+                                    max_checks_per_day: e.target.value === '' ? undefined : parseInt(e.target.value)
                                   }
                                 })
                               }
                               className="bg-gray-700 border-gray-600"
                             />
+                            <p className="text-xs text-gray-400 mt-1">Leave empty for unlimited checks</p>
                           </div>
                         </div>
                       </TabsContent>
@@ -789,10 +791,11 @@ export default function ConfigurationPage() {
                             </Select>
                           </div>
                           <div>
-                            <Label>Max Checks Per Date</Label>
+                            <Label>Max Checks Per Date (Optional)</Label>
                             <Input
                               type="number"
-                              value={monitor.specific_dates_config?.max_checks_per_date ?? 30}
+                              placeholder="Unlimited"
+                              value={monitor.specific_dates_config?.max_checks_per_date ?? ''}
                               onChange={(e) =>
                                 updateMonitor(index, {
                                   schedule_type: 'specific_dates',
@@ -802,12 +805,13 @@ export default function ConfigurationPage() {
                                     start_time: monitor.specific_dates_config?.start_time || '09:00',
                                     end_time: monitor.specific_dates_config?.end_time || '17:00',
                                     interval_minutes: monitor.specific_dates_config?.interval_minutes || 15,
-                                    max_checks_per_date: e.target.value === '' ? 0 : parseInt(e.target.value)
+                                    max_checks_per_date: e.target.value === '' ? undefined : parseInt(e.target.value)
                                   }
                                 })
                               }
                               className="bg-gray-700 border-gray-600"
                             />
+                            <p className="text-xs text-gray-400 mt-1">Leave empty for unlimited checks</p>
                           </div>
                         </div>
                       </TabsContent>
@@ -856,7 +860,7 @@ export default function ConfigurationPage() {
                                       recurring_config: {
                                         days: monitor.recurring_config?.days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
                                         interval_minutes: monitor.recurring_config?.interval_minutes || 15,
-                                        max_checks_per_day: monitor.recurring_config?.max_checks_per_day ?? 30,
+                                        max_checks_per_day: monitor.recurring_config?.max_checks_per_day,
                                         end_time: monitor.recurring_config?.end_time || '17:00',
                                         start_time: e.target.value
                                       }
@@ -876,7 +880,7 @@ export default function ConfigurationPage() {
                                       recurring_config: {
                                         days: monitor.recurring_config?.days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
                                         interval_minutes: monitor.recurring_config?.interval_minutes || 15,
-                                        max_checks_per_day: monitor.recurring_config?.max_checks_per_day ?? 30,
+                                        max_checks_per_day: monitor.recurring_config?.max_checks_per_day,
                                         start_time: monitor.recurring_config?.start_time || '09:00',
                                         end_time: e.target.value
                                       }
@@ -916,21 +920,23 @@ export default function ConfigurationPage() {
                                 </Select>
                               </div>
                               <div>
-                                <Label>Max Checks Per Day</Label>
+                                <Label>Max Checks Per Day (Optional)</Label>
                                 <Input
                                   type="number"
-                                  value={monitor.recurring_config?.max_checks_per_day ?? 30}
+                                  placeholder="Unlimited"
+                                  value={monitor.recurring_config?.max_checks_per_day ?? ''}
                                   onChange={(e) =>
                                     updateMonitor(index, {
                                       schedule_type: 'hybrid',
                                       recurring_config: {
                                         ...monitor.recurring_config!,
-                                        max_checks_per_day: e.target.value === '' ? 0 : parseInt(e.target.value)
+                                        max_checks_per_day: e.target.value === '' ? undefined : parseInt(e.target.value)
                                       }
                                     })
                                   }
                                   className="bg-gray-700 border-gray-600"
                                 />
+                                <p className="text-xs text-gray-400 mt-1">Leave empty for unlimited checks</p>
                               </div>
                             </div>
                           </div>
@@ -1043,10 +1049,11 @@ export default function ConfigurationPage() {
                             </div>
 
                             <div>
-                              <Label>Max Checks Per Date</Label>
+                              <Label>Max Checks Per Date (Optional)</Label>
                               <Input
                                 type="number"
-                                value={monitor.specific_dates_config?.max_checks_per_date ?? 30}
+                                placeholder="Unlimited"
+                                value={monitor.specific_dates_config?.max_checks_per_date ?? ''}
                                 onChange={(e) =>
                                   updateMonitor(index, {
                                     schedule_type: 'hybrid',
@@ -1056,12 +1063,13 @@ export default function ConfigurationPage() {
                                       start_time: monitor.specific_dates_config?.start_time || '09:00',
                                       end_time: monitor.specific_dates_config?.end_time || '17:00',
                                       interval_minutes: monitor.specific_dates_config?.interval_minutes || 15,
-                                      max_checks_per_date: e.target.value === '' ? 0 : parseInt(e.target.value)
+                                      max_checks_per_date: e.target.value === '' ? undefined : parseInt(e.target.value)
                                     }
                                   })
                                 }
                                 className="bg-gray-700 border-gray-600"
                               />
+                              <p className="text-xs text-gray-400 mt-1">Leave empty for unlimited checks</p>
                             </div>
                           </div>
                         </div>

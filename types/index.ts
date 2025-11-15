@@ -11,7 +11,7 @@ export interface RecurringConfig {
   start_time: string; // HH:mm format
   end_time: string; // HH:mm format
   interval_minutes: number; // 1, 2, 5, 10, 15, 30, 60
-  max_checks_per_day: number;
+  max_checks_per_day?: number; // Optional: limits total checks per day
 }
 
 export interface SpecificDatesConfig {
@@ -19,7 +19,7 @@ export interface SpecificDatesConfig {
   start_time: string; // HH:mm format
   end_time: string; // HH:mm format
   interval_minutes: number;
-  max_checks_per_date: number;
+  max_checks_per_date?: number; // Optional: limits checks per date
 }
 
 export interface MonitoredEmail {
