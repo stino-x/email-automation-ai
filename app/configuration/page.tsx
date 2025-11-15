@@ -1077,6 +1077,22 @@ export default function ConfigurationPage() {
                     </Tabs>
 
                     <div>
+                      <Label>Custom AI Prompt (Optional)</Label>
+                      <p className="text-xs text-gray-400 mb-2">
+                        Override the global AI prompt for this specific sender. Leave empty to use global prompt.
+                      </p>
+                      <Textarea
+                        placeholder="Leave empty to use global AI prompt..."
+                        value={monitor.ai_prompt || ''}
+                        onChange={(e) => updateMonitor(index, { ai_prompt: e.target.value || undefined })}
+                        className="bg-gray-700 border-gray-600 min-h-[150px] font-mono text-sm"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        Available variables: {'{SENDER_NAME}'}, {'{SENDER_EMAIL}'}, {'{EMAIL_SUBJECT}'}, {'{EMAIL_CONTENT}'}, {'{CALENDAR_EVENTS}'}, {'{CURRENT_DATE}'}
+                      </p>
+                    </div>
+
+                    <div>
                       <Label>Stop Checking After Response</Label>
                       <Select
                         value={monitor.stop_after_response}
@@ -1114,9 +1130,10 @@ export default function ConfigurationPage() {
         {/* AI Prompt Configuration */}
         <Card className="bg-gray-900 border-gray-800 mb-8">
           <CardHeader>
-            <CardTitle>AI Response Configuration</CardTitle>
+            <CardTitle>Global AI Response Configuration</CardTitle>
             <CardDescription>
-              Customize the AI prompt. Available variables: {'{SENDER_NAME}'}, {'{SENDER_EMAIL}'},{' '}
+              Default AI prompt for all email monitors. Individual monitors can override this with their own custom prompt.
+              Available variables: {'{SENDER_NAME}'}, {'{SENDER_EMAIL}'},{' '}
               {'{EMAIL_SUBJECT}'}, {'{EMAIL_CONTENT}'}, {'{CALENDAR_EVENTS}'}, {'{CURRENT_DATE}'}
             </CardDescription>
           </CardHeader>
@@ -1126,6 +1143,9 @@ export default function ConfigurationPage() {
               onChange={(e) => setAiPrompt(e.target.value)}
               className="bg-gray-700 border-gray-600 min-h-[200px] font-mono text-sm"
             />
+            <p className="text-xs text-gray-400 mt-2">
+              💡 Tip: Each email monitor can have its own custom prompt. Check the monitor settings above.
+            </p>
           </CardContent>
         </Card>
 

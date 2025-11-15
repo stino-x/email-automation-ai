@@ -50,8 +50,9 @@ export interface MonitoredEmail {
   schedule_type?: ScheduleType;
   recurring_config?: RecurringConfig;
   specific_dates_config?: SpecificDatesConfig;
-  stop_after_response: boolean | StopAfterResponse;
+  stop_after_response: StopAfterResponse;
   is_active?: boolean; // Individual toggle for each monitor
+  ai_prompt?: string; // Optional: custom AI prompt for this monitor (overrides global)
 }
 
 export interface UserConfiguration {

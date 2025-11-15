@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { google } from 'googleapis';
 import Groq from 'groq-sdk';
 import { isInSchedule, getMaxChecksForPeriod, generateMonitorIdentifier, generatePeriodIdentifier } from './utils/scheduling';
-import type { UserConfiguration, GoogleTokens, MonitoredEmail } from './types';
+import type { UserConfiguration, GoogleTokens, MonitoredEmail, StopAfterResponse } from './types';
 
 // Database config type (from frontend) - matches what the frontend saves
 interface DatabaseMonitor {
@@ -29,6 +29,7 @@ interface DatabaseMonitor {
   stop_after_response?: string;
   is_active?: boolean; // Individual monitor toggle
   receiving_email?: string; // Which Gmail account receives this email
+  ai_prompt?: string; // Optional: custom AI prompt for this monitor
 }
 
 interface DatabaseConfig {
@@ -158,12 +159,13 @@ function transformDatabaseConfig(dbConfig: DatabaseConfig): UserConfiguration {
         sender_email: monitor.sender_email!,
         keywords: monitor.keywords || [],
         schedule,
-        stop_after_response: monitor.stop_after_response !== 'never',
+        stop_after_response: (monitor.stop_after_response || 'never') as StopAfterResponse,
         is_active: monitor.is_active ?? true, // Include is_active
         receiving_email: monitor.receiving_email, // Include receiving_email for multi-account support
         schedule_type: monitor.schedule_type,
         recurring_config: monitor.recurring_config,
-        specific_dates_config: monitor.specific_dates_config
+        specific_dates_config: monitor.specific_dates_config,
+        ai_prompt: monitor.ai_prompt // Include per-monitor AI prompt
       };
     }).filter((m): m is MonitoredEmail => m !== null) // Remove null entries
   };
@@ -372,7 +374,9 @@ async function checkEmails() {
             continue;
           }
           
-          await checkSingleMonitor(userId, monitor, tokens, config.ai_prompt_template, config.calendar_id);
+          // Use monitor-specific prompt if available, otherwise use global prompt
+          const aiPrompt = monitor.ai_prompt || config.ai_prompt_template;
+          await checkSingleMonitor(userId, monitor, tokens, aiPrompt, config.calendar_id);
         } catch (error) {
           console.error(`[USER ${userId}] Error checking ${monitor.email_address}:`, error);
         }
