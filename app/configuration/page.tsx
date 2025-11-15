@@ -674,7 +674,7 @@ export default function ConfigurationPage() {
                                       start_time: monitor.specific_dates_config?.start_time || '09:00',
                                       end_time: monitor.specific_dates_config?.end_time || '17:00',
                                       interval_minutes: monitor.specific_dates_config?.interval_minutes || 15,
-                                      max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date || 30
+                                      max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date
                                     }
                                   });
                                 }
@@ -726,7 +726,7 @@ export default function ConfigurationPage() {
                                     start_time: e.target.value,
                                     end_time: monitor.specific_dates_config?.end_time || '17:00',
                                     interval_minutes: monitor.specific_dates_config?.interval_minutes || 15,
-                                    max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date || 30
+                                    max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date
                                   }
                                 })
                               }
@@ -747,7 +747,7 @@ export default function ConfigurationPage() {
                                     start_time: monitor.specific_dates_config?.start_time || '09:00',
                                     end_time: e.target.value,
                                     interval_minutes: monitor.specific_dates_config?.interval_minutes || 15,
-                                    max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date || 30
+                                    max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date
                                   }
                                 })
                               }
@@ -770,7 +770,7 @@ export default function ConfigurationPage() {
                                     start_time: monitor.specific_dates_config?.start_time || '09:00',
                                     end_time: monitor.specific_dates_config?.end_time || '17:00',
                                     interval_minutes: parseFloat(value),
-                                    max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date || 30
+                                    max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date
                                   }
                                 })
                               }
@@ -967,7 +967,7 @@ export default function ConfigurationPage() {
                                           start_time: monitor.specific_dates_config?.start_time || '09:00',
                                           end_time: monitor.specific_dates_config?.end_time || '17:00',
                                           interval_minutes: monitor.specific_dates_config?.interval_minutes || 15,
-                                          max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date || 30
+                                          max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date
                                         }
                                       });
                                     }
@@ -1018,7 +1018,7 @@ export default function ConfigurationPage() {
                                         start_time: e.target.value,
                                         end_time: monitor.specific_dates_config?.end_time || '17:00',
                                         interval_minutes: monitor.specific_dates_config?.interval_minutes || 15,
-                                        max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date || 30
+                                        max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date
                                       }
                                     })
                                   }
@@ -1039,7 +1039,7 @@ export default function ConfigurationPage() {
                                         start_time: monitor.specific_dates_config?.start_time || '09:00',
                                         end_time: e.target.value,
                                         interval_minutes: monitor.specific_dates_config?.interval_minutes || 15,
-                                        max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date || 30
+                                        max_checks_per_date: monitor.specific_dates_config?.max_checks_per_date
                                       }
                                     })
                                   }
