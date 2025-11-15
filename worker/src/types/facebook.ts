@@ -24,6 +24,7 @@ export interface FacebookConfiguration {
   default_prompt_template?: string;
   check_interval_seconds: number; // How often to check (e.g., 60 = every minute)
   is_active: boolean; // Master toggle
+  calendar_id?: string; // Google Calendar ID to use (default: 'primary')
   created_at?: string;
   updated_at?: string;
 }

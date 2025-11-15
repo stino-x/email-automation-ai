@@ -138,9 +138,12 @@ async function handleFacebookMessage(userId: string, message: FacebookMessage): 
 
     // Generate AI response if auto-respond is enabled
     if (matchingMonitor.auto_respond) {
+      const calendarId = config.calendar_id || 'primary';
       const aiResponse = await generateFacebookResponse(
         message.body,
-        matchingMonitor.ai_prompt_template
+        matchingMonitor.ai_prompt_template,
+        userId,
+        calendarId
       );
 
       // Send response
@@ -179,18 +182,74 @@ async function handleFacebookMessage(userId: string, message: FacebookMessage): 
 }
 
 /**
- * Generate AI response using Groq
+ * Generate AI response using Groq with optional calendar integration
  */
 async function generateFacebookResponse(
   userMessage: string,
-  promptTemplate: string
+  promptTemplate: string,
+  userId: string,
+  calendarId: string = 'primary'
 ): Promise<string> {
+  let finalPrompt = promptTemplate;
+
+  // Check if calendar is needed
+  if (finalPrompt.includes('{CALENDAR_EVENTS}')) {
+    try {
+      // Fetch user's Google tokens
+      const { data: tokenData } = await supabase
+        .from('google_tokens')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (tokenData) {
+        const { google } = await import('googleapis');
+        const oauth2Client = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_CLIENT_SECRET,
+          process.env.GOOGLE_REDIRECT_URI
+        );
+
+        oauth2Client.setCredentials({
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+        });
+
+        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const now = new Date();
+        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+        const { data: events } = await calendar.events.list({
+          calendarId,
+          timeMin: now.toISOString(),
+          timeMax: endDate.toISOString(),
+          maxResults: 20,
+          singleEvents: true,
+          orderBy: 'startTime',
+        });
+
+        const formattedEvents = (events.items || []).map(event => {
+          const start = event.start?.dateTime || event.start?.date || '';
+          const end = event.end?.dateTime || event.end?.date || '';
+          return `- ${event.summary} (${start} to ${end})`;
+        }).join('\n') || 'No upcoming calendar events.';
+
+        finalPrompt = finalPrompt.replace(/\{CALENDAR_EVENTS\}/g, formattedEvents);
+      } else {
+        finalPrompt = finalPrompt.replace(/\{CALENDAR_EVENTS\}/g, 'Calendar not connected.');
+      }
+    } catch (error) {
+      console.error('[Facebook] Calendar fetch error:', error);
+      finalPrompt = finalPrompt.replace(/\{CALENDAR_EVENTS\}/g, 'Unable to fetch calendar.');
+    }
+  }
+
   const completion = await groq.chat.completions.create({
     model: 'llama-3.1-70b-versatile',
     messages: [
       {
         role: 'system',
-        content: promptTemplate
+        content: finalPrompt
       },
       {
         role: 'user',

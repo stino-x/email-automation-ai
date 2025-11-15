@@ -43,13 +43,17 @@ function transformDatabaseConfig(dbConfig) {
             user_id: dbConfig.user_id,
             monitored_emails: [],
             ai_prompt_template: dbConfig.ai_prompt_template || '',
-            is_active: true
+            is_active: true,
+            max_emails_per_period: 10,
+            once_per_window: true
         };
     }
     return {
         user_id: dbConfig.user_id,
         ai_prompt_template: dbConfig.ai_prompt_template || '',
         is_active: true,
+        max_emails_per_period: 10,
+        once_per_window: true,
         monitored_emails: dbConfig.monitored_emails
             .filter((monitor) => monitor !== null && monitor !== undefined)
             .map((monitor) => {
@@ -298,7 +302,7 @@ async function checkEmails() {
                         console.log(`[${monitor.email_address}] ⏸️ Monitor individually PAUSED (INSTANT from DB) - Skipping`);
                         continue;
                     }
-                    await checkSingleMonitor(userId, monitor, tokens, config.ai_prompt_template);
+                    await checkSingleMonitor(userId, monitor, tokens, config.ai_prompt_template, config.calendar_id);
                 }
                 catch (error) {
                     console.error(`[USER ${userId}] Error checking ${monitor.email_address}:`, error);
@@ -307,7 +311,7 @@ async function checkEmails() {
         }
     }
 }
-async function checkSingleMonitor(userId, monitor, tokens, promptTemplate) {
+async function checkSingleMonitor(userId, monitor, tokens, promptTemplate, calendarId) {
     // 1. Check if current time is within schedule
     if (!(0, scheduling_1.isInSchedule)(monitor)) {
         console.log(`[${monitor.email_address}] Not in schedule, skipping`);
@@ -438,8 +442,10 @@ async function checkSingleMonitor(userId, monitor, tokens, promptTemplate) {
                 const calendar = googleapis_1.google.calendar({ version: 'v3', auth: oauth2Client });
                 const now = new Date();
                 const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+                // Use configured calendar_id or default to 'primary'
+                const effectiveCalendarId = calendarId || 'primary';
                 const { data: events } = await calendar.events.list({
-                    calendarId: 'primary',
+                    calendarId: effectiveCalendarId,
                     timeMin: now.toISOString(),
                     timeMax: endDate.toISOString(),
                     maxResults: 20,

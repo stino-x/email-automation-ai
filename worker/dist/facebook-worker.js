@@ -1,6 +1,39 @@
 "use strict";
 // Facebook Worker Integration
 // Add this to your existing worker/src/index.ts
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -110,7 +143,8 @@ async function handleFacebookMessage(userId, message) {
         console.log(`[FB ${userId}] New message in ${matchingMonitor.thread_name} from ${message.senderName}`);
         // Generate AI response if auto-respond is enabled
         if (matchingMonitor.auto_respond) {
-            const aiResponse = await generateFacebookResponse(message.body, matchingMonitor.ai_prompt_template);
+            const calendarId = config.calendar_id || 'primary';
+            const aiResponse = await generateFacebookResponse(message.body, matchingMonitor.ai_prompt_template, userId, calendarId);
             // Send response
             await client.sendMessage(message.threadId, aiResponse);
             // Mark as read (optional)
@@ -136,15 +170,59 @@ async function handleFacebookMessage(userId, message) {
     }
 }
 /**
- * Generate AI response using Groq
+ * Generate AI response using Groq with optional calendar integration
  */
-async function generateFacebookResponse(userMessage, promptTemplate) {
+async function generateFacebookResponse(userMessage, promptTemplate, userId, calendarId = 'primary') {
+    let finalPrompt = promptTemplate;
+    // Check if calendar is needed
+    if (finalPrompt.includes('{CALENDAR_EVENTS}')) {
+        try {
+            // Fetch user's Google tokens
+            const { data: tokenData } = await supabase
+                .from('google_tokens')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+            if (tokenData) {
+                const { google } = await Promise.resolve().then(() => __importStar(require('googleapis')));
+                const oauth2Client = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
+                oauth2Client.setCredentials({
+                    access_token: tokenData.access_token,
+                    refresh_token: tokenData.refresh_token,
+                });
+                const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+                const now = new Date();
+                const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+                const { data: events } = await calendar.events.list({
+                    calendarId,
+                    timeMin: now.toISOString(),
+                    timeMax: endDate.toISOString(),
+                    maxResults: 20,
+                    singleEvents: true,
+                    orderBy: 'startTime',
+                });
+                const formattedEvents = (events.items || []).map(event => {
+                    const start = event.start?.dateTime || event.start?.date || '';
+                    const end = event.end?.dateTime || event.end?.date || '';
+                    return `- ${event.summary} (${start} to ${end})`;
+                }).join('\n') || 'No upcoming calendar events.';
+                finalPrompt = finalPrompt.replace(/\{CALENDAR_EVENTS\}/g, formattedEvents);
+            }
+            else {
+                finalPrompt = finalPrompt.replace(/\{CALENDAR_EVENTS\}/g, 'Calendar not connected.');
+            }
+        }
+        catch (error) {
+            console.error('[Facebook] Calendar fetch error:', error);
+            finalPrompt = finalPrompt.replace(/\{CALENDAR_EVENTS\}/g, 'Unable to fetch calendar.');
+        }
+    }
     const completion = await groq.chat.completions.create({
         model: 'llama-3.1-70b-versatile',
         messages: [
             {
                 role: 'system',
-                content: promptTemplate
+                content: finalPrompt
             },
             {
                 role: 'user',

@@ -60,8 +60,9 @@ export interface UserConfiguration {
   monitored_emails: MonitoredEmail[];
   ai_prompt_template: string;
   is_active: boolean;
-  max_emails_per_period?: number;
-  once_per_window?: boolean;
+  max_emails_per_period: number;
+  once_per_window: boolean;
+  calendar_id?: string; // Google Calendar ID to use (default: 'primary')
   updated_at?: string;
 }
 

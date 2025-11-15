@@ -42,6 +42,7 @@ export interface UserConfiguration {
   is_active: boolean;
   max_emails_per_period: number;
   once_per_window: boolean;
+  calendar_id?: string; // Google Calendar ID to use (default: 'primary')
   updated_at?: string;
 }
 

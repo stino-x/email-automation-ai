@@ -82,7 +82,9 @@ function transformDatabaseConfig(dbConfig: DatabaseConfig): UserConfiguration {
       user_id: dbConfig.user_id,
       monitored_emails: [],
       ai_prompt_template: dbConfig.ai_prompt_template || '',
-      is_active: true
+      is_active: true,
+      max_emails_per_period: 10,
+      once_per_window: true
     };
   }
 
@@ -90,6 +92,8 @@ function transformDatabaseConfig(dbConfig: DatabaseConfig): UserConfiguration {
     user_id: dbConfig.user_id,
     ai_prompt_template: dbConfig.ai_prompt_template || '',
     is_active: true,
+    max_emails_per_period: 10,
+    once_per_window: true,
     monitored_emails: dbConfig.monitored_emails
       .filter((monitor): monitor is DatabaseMonitor => 
         monitor !== null && monitor !== undefined
@@ -368,7 +372,7 @@ async function checkEmails() {
             continue;
           }
           
-          await checkSingleMonitor(userId, monitor, tokens, config.ai_prompt_template);
+          await checkSingleMonitor(userId, monitor, tokens, config.ai_prompt_template, config.calendar_id);
         } catch (error) {
           console.error(`[USER ${userId}] Error checking ${monitor.email_address}:`, error);
         }
@@ -381,7 +385,8 @@ async function checkSingleMonitor(
   userId: string,
   monitor: MonitoredEmail,
   tokens: GoogleTokens,
-  promptTemplate: string
+  promptTemplate: string,
+  calendarId?: string
 ) {
   // 1. Check if current time is within schedule
   if (!isInSchedule(monitor)) {
@@ -543,8 +548,11 @@ async function checkSingleMonitor(
         const now = new Date();
         const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
+        // Use configured calendar_id or default to 'primary'
+        const effectiveCalendarId = calendarId || 'primary';
+
         const { data: events } = await calendar.events.list({
-          calendarId: 'primary',
+          calendarId: effectiveCalendarId,
           timeMin: now.toISOString(),
           timeMax: endDate.toISOString(),
           maxResults: 20,

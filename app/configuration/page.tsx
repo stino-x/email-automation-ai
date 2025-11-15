@@ -94,6 +94,7 @@ export default function ConfigurationPage() {
     '5. Be professional, helpful, and accurate about my schedule\n\n' +
     'Draft a helpful and accurate response based on the email content and my calendar.'
   );
+  const [calendarId, setCalendarId] = useState('primary');
   const [isSaving, setIsSaving] = useState(false);
 
   const loadConfiguration = useCallback(async (userId: string) => {
@@ -109,6 +110,7 @@ export default function ConfigurationPage() {
         if (data.configuration && data.configuration.monitored_emails.length > 0) {
           setMonitors(data.configuration.monitored_emails);
           setAiPrompt(data.configuration.ai_prompt_template || aiPrompt);
+          setCalendarId(data.configuration.calendar_id || 'primary');
           toast.success('Configuration loaded successfully!');
         }
       }
@@ -221,7 +223,8 @@ export default function ConfigurationPage() {
             ai_prompt_template: aiPrompt,
             is_active: false,
             max_emails_per_period: 10,
-            once_per_window: true
+            once_per_window: true,
+            calendar_id: calendarId
           }
         })
       });
@@ -256,7 +259,8 @@ export default function ConfigurationPage() {
             ai_prompt_template: '',
             is_active: false,
             max_emails_per_period: 10,
-            once_per_window: true
+            once_per_window: true,
+            calendar_id: 'primary'
           }
         })
       });
@@ -311,7 +315,8 @@ export default function ConfigurationPage() {
             ai_prompt_template: aiPrompt,
             is_active: false,
             max_emails_per_period: 10,
-            once_per_window: true
+            once_per_window: true,
+            calendar_id: calendarId
           }
         })
       });
@@ -1081,6 +1086,31 @@ export default function ConfigurationPage() {
               onChange={(e) => setAiPrompt(e.target.value)}
               className="bg-gray-700 border-gray-600 min-h-[200px] font-mono text-sm"
             />
+          </CardContent>
+        </Card>
+
+        {/* Calendar Configuration */}
+        <Card className="bg-gray-900 border-gray-800 mb-8">
+          <CardHeader>
+            <CardTitle>Google Calendar Integration</CardTitle>
+            <CardDescription>
+              Configure which Google Calendar to monitor for the {'{CALENDAR_EVENTS}'} placeholder
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="calendar-id">Calendar ID</Label>
+              <Input
+                id="calendar-id"
+                value={calendarId}
+                onChange={(e) => setCalendarId(e.target.value)}
+                placeholder="primary"
+                className="bg-gray-700 border-gray-600"
+              />
+              <p className="text-sm text-gray-400">
+                Use "primary" for your main calendar, or enter a specific calendar ID (e.g., email@gmail.com)
+              </p>
+            </div>
           </CardContent>
         </Card>
 

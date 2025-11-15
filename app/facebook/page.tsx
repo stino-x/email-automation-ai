@@ -28,6 +28,7 @@ export default function FacebookMonitoringPage() {
   const [monitors, setMonitors] = useState<FacebookMonitor[]>([]);
   const [defaultPrompt, setDefaultPrompt] = useState('You are a helpful assistant. Respond naturally and conversationally to this message.');
   const [checkInterval, setCheckInterval] = useState(60);
+  const [calendarId, setCalendarId] = useState('primary');
   const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -87,6 +88,7 @@ export default function FacebookMonitoringPage() {
           setMonitors(data.config.monitors || []);
           setDefaultPrompt(data.config.default_prompt_template || defaultPrompt);
           setCheckInterval(data.config.check_interval_seconds || 60);
+          setCalendarId(data.config.calendar_id || 'primary');
           setIsActive(data.config.is_active || false);
         }
       }
@@ -123,6 +125,7 @@ export default function FacebookMonitoringPage() {
           monitors,
           default_prompt_template: defaultPrompt,
           check_interval_seconds: checkInterval,
+          calendar_id: calendarId,
           is_active: isActive
         })
       });
@@ -493,6 +496,21 @@ export default function FacebookMonitoringPage() {
                     placeholder="Enter default instructions for AI..."
                   />
                   <p className="text-xs text-gray-400 mt-1">Used for new monitors</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="fb-calendar-id">Google Calendar ID</Label>
+                  <Input
+                    id="fb-calendar-id"
+                    type="text"
+                    value={calendarId}
+                    onChange={(e) => setCalendarId(e.target.value)}
+                    placeholder="primary"
+                    className="bg-gray-700 border-gray-600"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Use &quot;primary&quot; for main calendar, or specific calendar ID for {'{CALENDAR_EVENTS}'} placeholder
+                  </p>
                 </div>
               </CardContent>
             </Card>
