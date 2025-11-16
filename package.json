@@ -6,7 +6,27 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "jest --watch",
+    "test:unit": "jest tests/unit --ci",
+    "test:api": "jest tests/api --ci",
+    "test:integration": "playwright test tests/integration",
+    "test:e2e": "playwright test tests/e2e",
+    "test:e2e:ui": "playwright test --ui",
+    "test:full-flow": "playwright test tests/integration/full-flow.test.ts --headed",
+    "test:gmail": "playwright test tests/integration/gmail-api.test.ts",
+    "test:calendar": "playwright test tests/integration/calendar-api.test.ts",
+    "test:ai": "playwright test tests/integration/groq-ai.test.ts",
+    "test:worker": "playwright test tests/integration/worker-service.test.ts",
+    "test:database": "playwright test tests/integration/database.test.ts",
+    "test:errors": "playwright test tests/integration/error-handling.test.ts",
+    "test:edge-cases": "playwright test tests/integration/edge-cases.test.ts",
+    "test:facebook": "playwright test tests/integration/facebook.test.ts",
+    "test:all-endpoints": "playwright test tests/api/all-endpoints.test.ts",
+    "test:all-pages": "playwright test tests/e2e/all-pages.spec.ts",
+    "test:ci": "jest --ci --coverage && playwright test tests/e2e",
+    "test:all": "npm run test:unit && npm run test:api && npm run test:integration && npm run test:e2e",
+    "test:everything": "npm run test:all"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",
@@ -41,19 +61,26 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
-    "@types/node": "^20",
+    "@types/node": "^20.19.25",
     "@types/node-cron": "^3.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/ui": "^4.0.9",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
+    "jsdom": "^27.2.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.9"
   }
 }
