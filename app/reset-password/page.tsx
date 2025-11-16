@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { updatePassword, getSession } from '@/lib/auth';
+import { updatePassword, supabase } from '@/lib/auth';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -17,19 +17,51 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isValidSession, setIsValidSession] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [passwordReset, setPasswordReset] = useState(false);
 
   useEffect(() => {
     // Check if user has valid session from reset link
     const checkSession = async () => {
-      const session = await getSession();
-      if (session) {
-        setIsValidSession(true);
-      } else {
-        toast.error('Invalid or expired reset link');
+      try {
+        // First, check if there's a hash fragment with tokens (from email link)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const type = hashParams.get('type');
+
+        if (accessToken && type === 'recovery') {
+          // Set the session from the URL tokens
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: hashParams.get('refresh_token') || '',
+          });
+
+          if (error) {
+            console.error('Session error:', error);
+            toast.error('Invalid or expired reset link');
+            router.push('/forgot-password');
+            return;
+          }
+        }
+
+        // Now check if session is valid
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          setIsValidSession(true);
+        } else {
+          toast.error('Invalid or expired reset link');
+          router.push('/forgot-password');
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+        toast.error('Something went wrong');
         router.push('/forgot-password');
+      } finally {
+        setIsCheckingSession(false);
       }
     };
+    
     checkSession();
   }, [router]);
 
@@ -64,13 +96,33 @@ export default function ResetPasswordPage() {
     }
   };
 
-  if (!isValidSession) {
+  if (isCheckingSession) {
     return (
       <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
         <Card className="w-full max-w-md bg-gray-900 border-gray-800">
           <CardHeader>
             <CardTitle className="text-center">Validating Reset Link...</CardTitle>
           </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isValidSession) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-center text-red-400">Invalid Reset Link</CardTitle>
+            <CardDescription className="text-center">
+              This link has expired or is invalid
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/forgot-password" className="block">
+              <Button className="w-full">Request New Reset Link</Button>
+            </Link>
+          </CardContent>
         </Card>
       </div>
     );
