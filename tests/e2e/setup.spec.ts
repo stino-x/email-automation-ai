@@ -26,7 +26,7 @@ setup('create test user', async ({ page }) => {
   
   if (page.url().includes('signup')) {
     // Check for "user already exists" type error - this is actually good for our tests
-    const errorElements = await page.locator('text*=already, text*=exists, text*=registered').all();
+    const errorElements = await page.locator('text=already, text=exists, text=registered').all();
     let userExists = false;
     
     for (const element of errorElements) {

@@ -22,7 +22,7 @@ export async function signUp(email: string, password: string) {
   if (data.user) {
     console.log('Calling API to create user record:', data.user.id);
     try {
-      await fetch('/api/auth/sync-user', {
+      const response = await fetch('/api/auth/sync-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,6 +30,14 @@ export async function signUp(email: string, password: string) {
         },
         body: JSON.stringify({ email: email })
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('Sync API error:', response.status, errorData);
+        // Don't fail signup if sync fails
+      } else {
+        console.log('User sync successful');
+      }
     } catch (err) {
       console.error('Failed to sync user on signup:', err);
       // Don't fail signup if sync fails

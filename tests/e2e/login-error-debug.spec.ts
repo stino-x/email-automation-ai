@@ -67,7 +67,7 @@ test.describe('Login Error Debug', () => {
     // Check for any visible error messages
     const errorTexts = ['error', 'invalid', 'incorrect', 'failed', 'wrong'];
     for (const errorText of errorTexts) {
-      const elements = await page.locator(`text*="${errorText}"`).all();
+      const elements = await page.locator(`text=${errorText}`).all();
       for (const element of elements) {
         if (await element.isVisible()) {
           console.log(`Found "${errorText}" message:`, await element.textContent());

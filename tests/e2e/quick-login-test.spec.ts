@@ -40,7 +40,7 @@ test.describe('Quick Login Test', () => {
       console.log('❌ Login failed, still on:', page.url());
       
       // Check for errors
-      const errorElements = await page.locator('text*=error, text*=invalid, text*=failed').all();
+      const errorElements = await page.locator('text=error, text=invalid, text=failed').all();
       for (const element of errorElements) {
         if (await element.isVisible()) {
           console.log('Error found:', await element.textContent());

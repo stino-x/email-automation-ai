@@ -30,11 +30,11 @@ test.describe('Simple Login Test', () => {
       
       // Check for specific error messages
       const errorSelectors = [
-        'text*=invalid',
-        'text*=incorrect',
-        'text*=wrong',
-        'text*=error',
-        'text*=failed',
+        'text=invalid',
+        'text=incorrect',
+        'text=wrong',
+        'text=error',
+        'text=failed',
         '[role="alert"]',
         '.error',
         '.alert'

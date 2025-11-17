@@ -36,8 +36,10 @@ export default function SignUpPage() {
     try {
       await signUp(email, password);
       toast.success('Account created! Please check your email to verify.');
+      // Always redirect even if sync fails (the signup itself succeeded)
       router.push('/login');
     } catch (error) {
+      console.error('Signup error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to sign up');
     } finally {
       setIsLoading(false);

@@ -1,8 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 import { config } from 'dotenv';
+import path from 'path';
 
-// Load test environment variables
-config({ path: '.env.test.local' });
+// Load test environment variables with full path
+const envPath = path.join(__dirname, '.env.test.local');
+config({ path: envPath });
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -34,13 +36,9 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npm run dev',
+    command: 'node scripts/start-test-server.js',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-    env: {
-      ...process.env,
-      NODE_ENV: 'test'
-    }
+    timeout: 120000
   },
 });

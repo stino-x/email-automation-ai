@@ -1,0 +1,349 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]:
+      - link "EmailAI" [ref=e5]:
+        - /url: /dashboard
+        - generic [ref=e7]: EmailAI
+      - generic [ref=e8]:
+        - link "Dashboard" [ref=e9]:
+          - /url: /dashboard
+        - link "My Configs" [ref=e10]:
+          - /url: /configs
+        - link "Edit Config" [ref=e11]:
+          - /url: /configuration
+        - link "Activity Logs" [ref=e12]:
+          - /url: /activity
+        - link "Facebook 🔒" [ref=e13]:
+          - /url: /facebook
+        - link "Settings" [ref=e14]:
+          - /url: /settings
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - img [ref=e17]
+          - generic [ref=e20]: austindev214@gmail.com
+        - button "Logout" [ref=e21]:
+          - img
+          - text: Logout
+  - generic [ref=e23]:
+    - heading "Configuration" [level=1] [ref=e24]
+    - paragraph [ref=e25]: Set up email monitoring and AI responses
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]: Email Monitors
+        - generic [ref=e29]: Add email addresses to monitor and configure schedules
+      - generic [ref=e30]:
+        - generic [ref=e33] [cursor=pointer]:
+          - generic [ref=e34]:
+            - button [ref=e35]:
+              - img
+            - generic [ref=e36]:
+              - generic [ref=e37]:
+                - img [ref=e38]
+                - generic [ref=e41]: test@example.com
+              - generic [ref=e42]: → executive-assistant@gmail.com
+              - generic [ref=e43]: Active
+          - generic [ref=e44]:
+            - switch [checked] [ref=e45]
+            - button [ref=e46]:
+              - img
+        - generic [ref=e49] [cursor=pointer]:
+          - generic [ref=e50]:
+            - button [ref=e51]:
+              - img
+            - generic [ref=e52]:
+              - generic [ref=e53]:
+                - img [ref=e54]
+                - generic [ref=e57]: important-client@example.com
+              - generic [ref=e58]: → work@gmail.com
+              - generic [ref=e59]: Paused
+          - generic [ref=e60]:
+            - switch [ref=e61]
+            - button [ref=e62]:
+              - img
+        - generic [ref=e65] [cursor=pointer]:
+          - generic [ref=e66]:
+            - button [ref=e67]:
+              - img
+            - generic [ref=e68]:
+              - generic [ref=e69]:
+                - img [ref=e70]
+                - generic [ref=e73]: sender2@example.com
+              - generic [ref=e74]: → main-inbox@gmail.com
+              - generic [ref=e75]: Paused
+          - generic [ref=e76]:
+            - switch [ref=e77]
+            - button [ref=e78]:
+              - img
+        - generic [ref=e81] [cursor=pointer]:
+          - generic [ref=e82]:
+            - button [ref=e83]:
+              - img
+            - generic [ref=e84]:
+              - generic [ref=e85]:
+                - img [ref=e86]
+                - generic [ref=e89]: sender3@example.com
+              - generic [ref=e90]: → main-inbox@gmail.com
+              - generic [ref=e91]: Paused
+          - generic [ref=e92]:
+            - switch [ref=e93]
+            - button [ref=e94]:
+              - img
+        - generic [ref=e97] [cursor=pointer]:
+          - generic [ref=e98]:
+            - button [ref=e99]:
+              - img
+            - generic [ref=e100]:
+              - generic [ref=e101]:
+                - img [ref=e102]
+                - generic [ref=e105]: support@client1.com
+              - generic [ref=e106]: → support-team@gmail.com
+              - generic [ref=e107]: Paused
+          - generic [ref=e108]:
+            - switch [ref=e109]
+            - button [ref=e110]:
+              - img
+        - generic [ref=e113] [cursor=pointer]:
+          - generic [ref=e114]:
+            - button [ref=e115]:
+              - img
+            - generic [ref=e116]:
+              - generic [ref=e117]:
+                - img [ref=e118]
+                - generic [ref=e121]: support@client2.com
+              - generic [ref=e122]: → support-team@gmail.com
+              - generic [ref=e123]: Paused
+          - generic [ref=e124]:
+            - switch [ref=e125]
+            - button [ref=e126]:
+              - img
+        - generic [ref=e129] [cursor=pointer]:
+          - generic [ref=e130]:
+            - button [ref=e131]:
+              - img
+            - generic [ref=e132]:
+              - generic [ref=e133]:
+                - img [ref=e134]
+                - generic [ref=e137]: billing@vendor.com
+              - generic [ref=e138]: → accounting@gmail.com
+              - generic [ref=e139]: Paused
+          - generic [ref=e140]:
+            - switch [ref=e141]
+            - button [ref=e142]:
+              - img
+        - generic [ref=e145] [cursor=pointer]:
+          - generic [ref=e146]:
+            - button [ref=e147]:
+              - img
+            - generic [ref=e148]:
+              - generic [ref=e149]:
+                - img [ref=e150]
+                - generic [ref=e153]: hr@company.com
+              - generic [ref=e154]: → personal@gmail.com
+              - generic [ref=e155]: Paused
+          - generic [ref=e156]:
+            - switch [ref=e157]
+            - button [ref=e158]:
+              - img
+        - generic [ref=e161] [cursor=pointer]:
+          - generic [ref=e162]:
+            - button [ref=e163]:
+              - img
+            - generic [ref=e164]:
+              - generic [ref=e165]:
+                - img [ref=e166]
+                - generic [ref=e169]: urgent@anywhere.com
+              - generic [ref=e170]: → personal@gmail.com
+              - generic [ref=e171]: Paused
+          - generic [ref=e172]:
+            - switch [ref=e173]
+            - button [ref=e174]:
+              - img
+        - generic [ref=e177] [cursor=pointer]:
+          - generic [ref=e178]:
+            - button [ref=e179]:
+              - img
+            - generic [ref=e180]:
+              - generic [ref=e181]:
+                - img [ref=e182]
+                - generic [ref=e185]: test1@example.com
+              - generic [ref=e186]: → austindev214@gmail.com
+              - generic [ref=e187]: Paused
+          - generic [ref=e188]:
+            - switch [ref=e189]
+            - button [ref=e190]:
+              - img
+        - generic [ref=e193] [cursor=pointer]:
+          - generic [ref=e194]:
+            - button [ref=e195]:
+              - img
+            - generic [ref=e196]:
+              - generic [ref=e197]:
+                - img [ref=e198]
+                - generic [ref=e201]: test2@example.com
+              - generic [ref=e202]: → austindev214@gmail.com
+              - generic [ref=e203]: Paused
+          - generic [ref=e204]:
+            - switch [ref=e205]
+            - button [ref=e206]:
+              - img
+        - generic [ref=e209] [cursor=pointer]:
+          - generic [ref=e210]:
+            - button [ref=e211]:
+              - img
+            - generic [ref=e212]:
+              - generic [ref=e213]:
+                - img [ref=e214]
+                - generic [ref=e217]: important-client@example.com
+              - generic [ref=e218]: → work@gmail.com
+              - generic [ref=e219]: Active
+          - generic [ref=e220]:
+            - switch [checked] [ref=e221]
+            - button [ref=e222]:
+              - img
+        - generic [ref=e225] [cursor=pointer]:
+          - generic [ref=e226]:
+            - button [ref=e227]:
+              - img
+            - generic [ref=e228]:
+              - generic [ref=e229]:
+                - img [ref=e230]
+                - generic [ref=e233]: sender2@example.com
+              - generic [ref=e234]: → main-inbox@gmail.com
+              - generic [ref=e235]: Active
+          - generic [ref=e236]:
+            - switch [checked] [ref=e237]
+            - button [ref=e238]:
+              - img
+        - generic [ref=e241] [cursor=pointer]:
+          - generic [ref=e242]:
+            - button [ref=e243]:
+              - img
+            - generic [ref=e244]:
+              - generic [ref=e245]:
+                - img [ref=e246]
+                - generic [ref=e249]: sender3@example.com
+              - generic [ref=e250]: → main-inbox@gmail.com
+              - generic [ref=e251]: Active
+          - generic [ref=e252]:
+            - switch [checked] [ref=e253]
+            - button [ref=e254]:
+              - img
+        - generic [ref=e257] [cursor=pointer]:
+          - generic [ref=e258]:
+            - button [ref=e259]:
+              - img
+            - generic [ref=e260]:
+              - generic [ref=e261]:
+                - img [ref=e262]
+                - generic [ref=e265]: support@client1.com
+              - generic [ref=e266]: → support-team@gmail.com
+              - generic [ref=e267]: Active
+          - generic [ref=e268]:
+            - switch [checked] [ref=e269]
+            - button [ref=e270]:
+              - img
+        - generic [ref=e273] [cursor=pointer]:
+          - generic [ref=e274]:
+            - button [ref=e275]:
+              - img
+            - generic [ref=e276]:
+              - generic [ref=e277]:
+                - img [ref=e278]
+                - generic [ref=e281]: support@client2.com
+              - generic [ref=e282]: → support-team@gmail.com
+              - generic [ref=e283]: Active
+          - generic [ref=e284]:
+            - switch [checked] [ref=e285]
+            - button [ref=e286]:
+              - img
+        - generic [ref=e289] [cursor=pointer]:
+          - generic [ref=e290]:
+            - button [ref=e291]:
+              - img
+            - generic [ref=e292]:
+              - generic [ref=e293]:
+                - img [ref=e294]
+                - generic [ref=e297]: billing@vendor.com
+              - generic [ref=e298]: → accounting@gmail.com
+              - generic [ref=e299]: Active
+          - generic [ref=e300]:
+            - switch [checked] [ref=e301]
+            - button [ref=e302]:
+              - img
+        - generic [ref=e305] [cursor=pointer]:
+          - generic [ref=e306]:
+            - button [ref=e307]:
+              - img
+            - generic [ref=e308]:
+              - generic [ref=e309]:
+                - img [ref=e310]
+                - generic [ref=e313]: hr@company.com
+              - generic [ref=e314]: → personal@gmail.com
+              - generic [ref=e315]: Active
+          - generic [ref=e316]:
+            - switch [checked] [ref=e317]
+            - button [ref=e318]:
+              - img
+        - generic [ref=e321] [cursor=pointer]:
+          - generic [ref=e322]:
+            - button [ref=e323]:
+              - img
+            - generic [ref=e324]:
+              - generic [ref=e325]:
+                - img [ref=e326]
+                - generic [ref=e329]: urgent@anywhere.com
+              - generic [ref=e330]: → personal@gmail.com
+              - generic [ref=e331]: Active
+          - generic [ref=e332]:
+            - switch [checked] [ref=e333]
+            - button [ref=e334]:
+              - img
+        - generic [ref=e337] [cursor=pointer]:
+          - generic [ref=e338]:
+            - button [ref=e339]:
+              - img
+            - generic [ref=e340]:
+              - generic [ref=e341]:
+                - img [ref=e342]
+                - generic [ref=e345]: test@example.com
+              - generic [ref=e346]: → austindev214@gmail.com
+              - generic [ref=e347]: Active
+          - generic [ref=e348]:
+            - switch [checked] [ref=e349]
+            - button [ref=e350]:
+              - img
+        - button "Add Email Monitor" [ref=e351]:
+          - img
+          - text: Add Email Monitor
+    - generic [ref=e352]:
+      - generic [ref=e353]:
+        - generic [ref=e354]: Global AI Response Configuration
+        - generic [ref=e355]: "Default AI prompt for all email monitors. Individual monitors can override this with their own custom prompt. Available variables: {SENDER_NAME}, {SENDER_EMAIL}, {EMAIL_SUBJECT}, {EMAIL_CONTENT}, {CALENDAR_EVENTS}, {CURRENT_DATE}"
+      - generic [ref=e356]:
+        - textbox [ref=e357]: "You are my personal AI assistant. Read this email and respond professionally on my behalf. Email from {SENDER_NAME} ({SENDER_EMAIL}): Subject: {EMAIL_SUBJECT} {EMAIL_CONTENT} 📅 MY CALENDAR AVAILABILITY (Next 30 days): {CALENDAR_EVENTS} IMPORTANT INSTRUCTIONS: 1. Check my calendar events CAREFULLY before answering availability questions 2. If asked about availability on a specific date/time, look for conflicts in the calendar 3. If I have an event at that time, say I'm NOT available and suggest alternative times 4. If no calendar events conflict, confirm I AM available 5. If confirming a meeting/event, create a calendar event by responding in JSON format 6. Be professional, helpful, and accurate about my schedule CALENDAR EVENT CREATION: When confirming a meeting, respond with: { \"response\": \"Great! I've scheduled our meeting for Tuesday at 2pm.\", \"create_event\": { \"summary\": \"Meeting with John\", \"description\": \"Discuss project details\", \"start_datetime\": \"2024-01-15T14:00:00Z\", \"end_datetime\": \"2024-01-15T15:00:00Z\", \"attendees\": [\"sender@email.com\"] } } Draft a helpful and accurate response based on the email content and my calendar."
+        - paragraph [ref=e358]: "💡 Tip: Each email monitor can have its own custom prompt. Check the monitor settings above."
+    - generic [ref=e359]:
+      - generic [ref=e360]:
+        - generic [ref=e361]: Google Calendar Integration
+        - generic [ref=e362]: "Configure which Google Calendar to monitor for the {CALENDAR_EVENTS} placeholder"
+      - generic [ref=e364]:
+        - generic [ref=e365]: Calendar ID
+        - textbox "Calendar ID" [ref=e366]:
+          - /placeholder: primary
+          - text: primary
+        - paragraph [ref=e367]: Use "primary" for your main calendar, or enter a specific calendar ID (e.g., email@gmail.com)
+    - generic [ref=e368]:
+      - button "Clear Configuration" [ref=e369]:
+        - img
+        - text: Clear Configuration
+      - button "Save Configuration" [ref=e370]:
+        - img
+        - text: Save Configuration
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e376] [cursor=pointer]:
+    - img [ref=e377]
+  - alert [ref=e382]
+```
