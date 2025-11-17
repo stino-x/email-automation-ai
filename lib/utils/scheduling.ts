@@ -119,7 +119,7 @@ export function getMaxChecksForPeriod(monitor: MonitoredEmail, periodIdentifier:
     return monitor.recurring_config?.max_checks_per_day ?? Infinity;
   }
 
-  return 100; // Default
+  return Infinity; // Default should be unlimited
 }
 
 export function generateMonitorIdentifier(senderEmail: string, schedule: MonitoredEmail): string {
@@ -161,6 +161,7 @@ export function estimateSchedule(monitor: MonitoredEmail): ScheduleEstimate {
     
     estimate.checks_per_day = config.max_checks_per_day ? Math.min(checksPerDay, config.max_checks_per_day) : checksPerDay;
     estimate.checks_per_week = estimate.checks_per_day * config.days.length;
+    estimate.is_unlimited = config.max_checks_per_day === undefined;
   }
 
   if (monitor.schedule_type === 'specific_dates' && monitor.specific_dates_config) {
@@ -173,10 +174,12 @@ export function estimateSchedule(monitor: MonitoredEmail): ScheduleEstimate {
     
     const maxPerDate = config.max_checks_per_date ? Math.min(checksPerDate, config.max_checks_per_date) : checksPerDate;
     estimate.total_checks = maxPerDate * config.dates.length;
+    estimate.is_unlimited = config.max_checks_per_date === undefined;
   }
 
   if (monitor.schedule_type === 'hybrid') {
     let totalChecks = 0;
+    let hasUnlimited = false;
 
     if (monitor.recurring_config) {
       const config = monitor.recurring_config;
@@ -188,6 +191,7 @@ export function estimateSchedule(monitor: MonitoredEmail): ScheduleEstimate {
       estimate.checks_per_day = config.max_checks_per_day ? Math.min(checksPerDay, config.max_checks_per_day) : checksPerDay;
       estimate.checks_per_week = estimate.checks_per_day * config.days.length;
       totalChecks += estimate.checks_per_week;
+      if (config.max_checks_per_day === undefined) hasUnlimited = true;
     }
 
     if (monitor.specific_dates_config) {
@@ -199,9 +203,11 @@ export function estimateSchedule(monitor: MonitoredEmail): ScheduleEstimate {
       );
       const maxPerDate = config.max_checks_per_date ? Math.min(checksPerDate, config.max_checks_per_date) : checksPerDate;
       totalChecks += maxPerDate * config.dates.length;
+      if (config.max_checks_per_date === undefined) hasUnlimited = true;
     }
 
     estimate.total_checks = totalChecks;
+    estimate.is_unlimited = hasUnlimited;
   }
 
   return estimate;
@@ -267,6 +273,14 @@ export function validateScheduleConfig(monitor: MonitoredEmail): { valid: boolea
       if (monitor.recurring_config.interval_minutes < 1) {
         errors.push('Check interval must be at least 1 minute');
       }
+      // Validate time window
+      if (monitor.recurring_config.start_time && monitor.recurring_config.end_time) {
+        const startTime = parse(monitor.recurring_config.start_time, 'HH:mm', new Date());
+        const endTime = parse(monitor.recurring_config.end_time, 'HH:mm', new Date());
+        if (endTime < startTime) {
+          errors.push('End time must be after start time or schedule spans midnight (invalid time window)');
+        }
+      }
     }
   }
 
@@ -282,6 +296,14 @@ export function validateScheduleConfig(monitor: MonitoredEmail): { valid: boolea
       }
       if (monitor.specific_dates_config.interval_minutes < 1) {
         errors.push('Check interval must be at least 1 minute');
+      }
+      // Validate time window
+      if (monitor.specific_dates_config.start_time && monitor.specific_dates_config.end_time) {
+        const startTime = parse(monitor.specific_dates_config.start_time, 'HH:mm', new Date());
+        const endTime = parse(monitor.specific_dates_config.end_time, 'HH:mm', new Date());
+        if (endTime < startTime) {
+          errors.push('End time must be after start time or schedule spans midnight (invalid time window)');
+        }
       }
     }
   }

@@ -322,7 +322,13 @@ describe('Complete Scheduling Utilities', () => {
         },
         stop_after_response: 'never',
         is_active: true,
-        schedule_type: 'recurring'
+        schedule_type: 'recurring',
+        recurring_config: {
+          days: ['monday'],
+          start_time: '09:00',
+          end_time: '17:00',
+          interval_minutes: 15
+        }
       };
 
       const max = getMaxChecksForPeriod(monitor, '2025-01-15');
@@ -344,7 +350,14 @@ describe('Complete Scheduling Utilities', () => {
         },
         stop_after_response: 'never',
         is_active: true,
-        schedule_type: 'recurring'
+        schedule_type: 'recurring',
+        recurring_config: {
+          days: ['monday'],
+          start_time: '09:00',
+          end_time: '17:00',
+          interval_minutes: 15,
+          max_checks_per_day: 50
+        }
       };
 
       const max = getMaxChecksForPeriod(monitor, '2025-01-15');

@@ -128,6 +128,10 @@ describe('Schedule Time Checking', () => {
     const now = new Date();
     const currentHour = now.getHours();
     const currentDay = now.getDay();
+    
+    // Map numeric day to string
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const currentDayName = dayNames[currentDay];
 
     const monitor: MonitoredEmail = {
       email_address: 'test@example.com',
@@ -142,7 +146,13 @@ describe('Schedule Time Checking', () => {
       },
       stop_after_response: 'never',
       is_active: true,
-      schedule_type: 'recurring'
+      schedule_type: 'recurring',
+      recurring_config: {
+        days: [currentDayName],
+        start_time: String(currentHour).padStart(2, '0') + ':00',
+        end_time: String(currentHour + 1).padStart(2, '0') + ':00',
+        interval_minutes: 15
+      }
     };
 
     const result = isInSchedule(monitor);
@@ -153,6 +163,10 @@ describe('Schedule Time Checking', () => {
     const now = new Date();
     const currentDay = now.getDay();
     const otherDay = (currentDay + 1) % 7;
+    
+    // Map numeric day to string
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const otherDayName = dayNames[otherDay];
 
     const monitor: MonitoredEmail = {
       email_address: 'test@example.com',
@@ -167,7 +181,13 @@ describe('Schedule Time Checking', () => {
       },
       stop_after_response: 'never',
       is_active: true,
-      schedule_type: 'recurring'
+      schedule_type: 'recurring',
+      recurring_config: {
+        days: [otherDayName],
+        start_time: '00:00',
+        end_time: '23:59',
+        interval_minutes: 15
+      }
     };
 
     const result = isInSchedule(monitor);
@@ -191,7 +211,14 @@ describe('Max Checks Calculation', () => {
       },
       stop_after_response: 'never',
       is_active: true,
-      schedule_type: 'recurring'
+      schedule_type: 'recurring',
+      recurring_config: {
+        days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        start_time: '09:00',
+        end_time: '17:00',
+        interval_minutes: 15
+        // max_checks_per_day undefined
+      }
     };
 
     const result = getMaxChecksForPeriod(monitor, '2024-01-15');
@@ -213,7 +240,14 @@ describe('Max Checks Calculation', () => {
       },
       stop_after_response: 'never',
       is_active: true,
-      schedule_type: 'recurring'
+      schedule_type: 'recurring',
+      recurring_config: {
+        days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        start_time: '09:00',
+        end_time: '17:00',
+        interval_minutes: 15,
+        max_checks_per_day: 50
+      }
     };
 
     const result = getMaxChecksForPeriod(monitor, '2024-01-15');

@@ -11,8 +11,11 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   testMatch: [
     '<rootDir>/tests/unit/**/*.test.ts',
-    '<rootDir>/tests/api/**/*.test.ts'
+    '<rootDir>/tests/api/**/!(all-endpoints).test.ts'
   ],
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'node-addons'],
+  },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },

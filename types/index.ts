@@ -272,4 +272,5 @@ export interface ScheduleEstimate {
   checks_per_day?: number;
   checks_per_week?: number;
   total_checks?: number;
+  is_unlimited?: boolean;
 }
