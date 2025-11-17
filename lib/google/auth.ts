@@ -287,13 +287,13 @@ export async function getUserEmail(tokens: GoogleTokens): Promise<string> {
     });
     
     return response.data.email || '';
-  } catch (error) {
+  } catch (error: any) {
     console.error('🔧 getUserEmail - Error details:', {
-      message: error.message,
-      status: error.status,
-      code: error.code,
-      config: error.config,
-      response: error.response?.data
+      message: error?.message,
+      status: error?.status,
+      code: error?.code,
+      config: error?.config,
+      response: error?.response?.data
     });
     throw error;
   }
