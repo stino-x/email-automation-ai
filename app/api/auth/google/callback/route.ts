@@ -41,6 +41,14 @@ export async function GET(request: NextRequest) {
 
     // Fetch the Google account email address (REQUIRED for multi-account support)
     console.log('Fetching Google account email...');
+    console.log('📋 Tokens for email fetch:', {
+      access_token_length: tokens.access_token?.length,
+      access_token_preview: tokens.access_token?.substring(0, 20) + '...',
+      refresh_token_length: tokens.refresh_token?.length,
+      expires_at: tokens.expires_at,
+      scopes: tokens.scopes
+    });
+    
     try {
       const googleEmail = await getUserEmail(tokens);
       tokens.google_email = googleEmail;

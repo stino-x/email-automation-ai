@@ -253,8 +253,48 @@ export async function validateTokens(tokens: GoogleTokens): Promise<boolean> {
 
 // Get user email from tokens
 export async function getUserEmail(tokens: GoogleTokens): Promise<string> {
-  setCredentials(tokens);
-  const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
-  const response = await oauth2.userinfo.get();
-  return response.data.email || '';
+  try {
+    // Create a new OAuth2 client instance to avoid conflicts
+    const authClient = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI
+    );
+    
+    // Set credentials
+    authClient.setCredentials({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expiry_date: new Date(tokens.expires_at).getTime()
+    });
+    
+    console.log('🔧 getUserEmail - Setting credentials:', {
+      has_access_token: !!tokens.access_token,
+      has_refresh_token: !!tokens.refresh_token,
+      expires_at: tokens.expires_at,
+      expiry_timestamp: new Date(tokens.expires_at).getTime()
+    });
+    
+    // Get user info
+    const oauth2 = google.oauth2({ version: 'v2', auth: authClient });
+    console.log('🔧 getUserEmail - Making API call to userinfo.get()...');
+    
+    const response = await oauth2.userinfo.get();
+    console.log('🔧 getUserEmail - API response:', {
+      email: response.data.email,
+      id: response.data.id,
+      name: response.data.name
+    });
+    
+    return response.data.email || '';
+  } catch (error) {
+    console.error('🔧 getUserEmail - Error details:', {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+      config: error.config,
+      response: error.response?.data
+    });
+    throw error;
+  }
 }
