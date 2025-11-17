@@ -77,11 +77,38 @@ export async function GET(request: NextRequest) {
 
     // Get all connected Google accounts
     const allGoogleAccounts = await getAllGoogleTokens(userId);
-    const googleAccounts = allGoogleAccounts.map((token, index) => ({
-      email: token.google_email || 'Unknown Email',
-      is_valid: new Date(token.expires_at) > new Date(),
-      created_at: token.created_at,
-      account_label: token.google_email ? `Account (${token.google_email})` : (index === 0 ? 'Primary Account' : `Account ${index + 1}`)
+    const googleAccounts = await Promise.all(allGoogleAccounts.map(async (token, index) => {
+      let isValid = true;
+      
+      try {
+        // Check if token is expired and needs refresh
+        const isExpired = new Date(token.expires_at) <= new Date();
+        
+        if (isExpired && token.refresh_token) {
+          console.log(`🔄 Token for ${token.google_email} is expired, attempting refresh...`);
+          
+          // Import refresh function
+          const { refreshTokens } = await import('@/lib/google/auth');
+          await refreshTokens(token);
+          console.log(`✅ Token refreshed successfully for ${token.google_email}`);
+        }
+        
+        // If no refresh token and expired, mark as invalid
+        if (isExpired && !token.refresh_token) {
+          isValid = false;
+          console.log(`❌ Token for ${token.google_email} is expired with no refresh token`);
+        }
+      } catch (error) {
+        console.error(`❌ Failed to validate/refresh token for ${token.google_email}:`, error);
+        isValid = false;
+      }
+      
+      return {
+        email: token.google_email || 'Unknown Email',
+        is_valid: isValid,
+        created_at: token.created_at,
+        account_label: token.google_email ? `Account (${token.google_email})` : (index === 0 ? 'Primary Account' : `Account ${index + 1}`)
+      };
     }));
 
     return NextResponse.json({

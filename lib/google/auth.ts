@@ -65,6 +65,38 @@ export function setCredentials(tokens: GoogleTokens) {
   });
 }
 
+export async function refreshTokens(tokens: GoogleTokens): Promise<void> {
+  console.log(`🔄 Refreshing tokens for user ${tokens.user_id}, email: ${tokens.google_email}`);
+  
+  if (!tokens.refresh_token) {
+    throw new Error('No refresh token available');
+  }
+
+  try {
+    // Refresh the access token
+    const refreshedTokens = await refreshAccessToken(tokens.refresh_token);
+    
+    // Import the save function to update the database
+    const { saveGoogleTokens } = await import('@/lib/supabase/queries');
+    
+    // Update the tokens in the database
+    await saveGoogleTokens({
+      user_id: tokens.user_id,
+      access_token: refreshedTokens.access_token,
+      refresh_token: tokens.refresh_token, // Keep the same refresh token
+      expires_at: refreshedTokens.expires_at,
+      scopes: tokens.scopes,
+      google_email: tokens.google_email,
+      account_label: tokens.account_label
+    });
+    
+    console.log(`✅ Successfully refreshed and updated tokens for ${tokens.google_email}`);
+  } catch (error) {
+    console.error(`❌ Failed to refresh tokens for ${tokens.google_email}:`, error);
+    throw error;
+  }
+}
+
 // Gmail operations
 export async function getUnreadEmails(
   tokens: GoogleTokens,
