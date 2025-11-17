@@ -1,0 +1,47 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: Welcome Back
+      - generic [ref=e6]: Sign in to your email automation account
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - generic [ref=e10]: Email
+          - generic [ref=e11]:
+            - img [ref=e12]
+            - textbox "Email" [ref=e15]:
+              - /placeholder: your@email.com
+              - text: austindev214@gmail.com
+        - generic [ref=e16]:
+          - generic [ref=e17]: Password
+          - generic [ref=e18]:
+            - img [ref=e19]
+            - textbox "Password" [ref=e22]:
+              - /placeholder: ••••••••
+              - text: Meamater77
+          - link "Forgot password?" [ref=e24] [cursor=pointer]:
+            - /url: /forgot-password
+        - button "Sign In" [ref=e25]:
+          - img
+          - text: Sign In
+      - generic [ref=e26]:
+        - text: Don't have an account?
+        - link "Sign up" [ref=e27] [cursor=pointer]:
+          - /url: /signup
+      - link "← Back to home" [ref=e29] [cursor=pointer]:
+        - /url: /
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e30]:
+        - img [ref=e32]
+        - generic [ref=e37]: Invalid login credentials
+      - listitem [ref=e38]:
+        - img [ref=e40]
+        - generic [ref=e45]: Invalid login credentials
+  - button "Open Next.js Dev Tools" [ref=e51] [cursor=pointer]:
+    - img [ref=e52]
+  - alert [ref=e56]
+```
