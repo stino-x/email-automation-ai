@@ -107,8 +107,9 @@ export async function updateServiceStatus(userId: string, isActive: boolean): Pr
 
 // Google tokens operations
 export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
-  console.log('saveGoogleTokens called for user:', tokens.user_id);
-  console.log('Google email:', tokens.google_email || 'not provided');
+  console.log('🔧 saveGoogleTokens called for user:', tokens.user_id);
+  console.log('🔧 Google email:', tokens.google_email || 'not provided');
+  console.log('🔧 Account label:', tokens.account_label || 'not provided');
   
   // Use server client to bypass RLS
   const serverClient = getServerClient();
@@ -119,6 +120,8 @@ export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'create
   
   if (tokens.google_email) {
     // Multi-account: Look for this specific email for this user
+    console.log(`🔍 Looking for existing token: user=${tokens.user_id}, email=${tokens.google_email}`);
+    
     const result = await serverClient
       .from('google_tokens')
       .select('*')
@@ -129,9 +132,11 @@ export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'create
     existing = result.data;
     selectError = result.error;
     
-    console.log(`Looking for existing token for user ${tokens.user_id} with email ${tokens.google_email}`);
+    console.log(`🔍 Query result: found=${!!existing}, error=${selectError?.message || 'none'}`);
   } else {
     // Legacy: Look for any token without google_email (backward compatibility)
+    console.log(`🔍 Looking for legacy token: user=${tokens.user_id} (no email)`);
+    
     const result = await serverClient
       .from('google_tokens')
       .select('*')
@@ -142,16 +147,16 @@ export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'create
     existing = result.data;
     selectError = result.error;
     
-    console.log(`Looking for existing legacy token for user ${tokens.user_id} (no email)`);
+    console.log(`🔍 Legacy query result: found=${!!existing}, error=${selectError?.message || 'none'}`);
   }
-
-  console.log('Existing tokens found:', !!existing);
   if (selectError && selectError.code !== 'PGRST116') {
     console.error('Error checking for existing tokens:', selectError);
   }
 
   if (existing) {
-    console.log('Updating existing tokens...');
+    console.log('🔄 UPDATING existing token for:', existing.google_email || 'legacy account');
+    console.log('🔄 Existing token ID:', existing.id);
+    
     const updateData: Partial<GoogleTokens> = {
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -168,6 +173,8 @@ export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'create
       updateData.account_label = tokens.account_label;
     }
     
+    console.log('🔄 Update data:', updateData);
+    
     let updateQuery = serverClient
       .from('google_tokens')
       .update(updateData)
@@ -181,21 +188,28 @@ export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'create
     const { error } = await updateQuery;
 
     if (error) {
-      console.error('Error updating tokens:', error);
+      console.error('❌ Error updating tokens:', error);
       throw error;
     }
-    console.log('Tokens updated successfully');
+    console.log('✅ Tokens updated successfully');
   } else {
-    console.log('Inserting new tokens...');
-    const { error } = await serverClient
+    console.log('➕ INSERTING NEW token for:', tokens.google_email);
+    console.log('➕ Insert data:', {
+      user_id: tokens.user_id,
+      google_email: tokens.google_email,
+      account_label: tokens.account_label
+    });
+    
+    const { error, data } = await serverClient
       .from('google_tokens')
-      .insert(tokens);
+      .insert(tokens)
+      .select();
 
     if (error) {
-      console.error('Error inserting tokens:', error);
+      console.error('❌ Error inserting tokens:', error);
       throw error;
     }
-    console.log('Tokens inserted successfully');
+    console.log('✅ New token inserted successfully:', data?.[0]?.id);
   }
 }
 
