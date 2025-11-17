@@ -290,7 +290,7 @@ export async function getUserEmail(tokens: GoogleTokens): Promise<string> {
       console.log('🔧 getUserEmail - Checking token validity...');
       const tokenInfo = await authClient.getTokenInfo(tokens.access_token);
       console.log('🔧 getUserEmail - Token info:', {
-        scope: tokenInfo.scope,
+        scopes: tokenInfo.scopes,
         expiry_date: tokenInfo.expiry_date,
         audience: tokenInfo.aud
       });
