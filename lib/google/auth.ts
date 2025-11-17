@@ -261,25 +261,57 @@ export async function getUserEmail(tokens: GoogleTokens): Promise<string> {
       process.env.GOOGLE_REDIRECT_URI
     );
     
-    // Set credentials
-    authClient.setCredentials({
+    console.log('🔧 getUserEmail - Token validation:', {
+      access_token_length: tokens.access_token?.length,
+      refresh_token_length: tokens.refresh_token?.length,
+      expires_at: tokens.expires_at,
+      is_expired: new Date(tokens.expires_at) <= new Date(),
+      time_until_expiry: Math.round((new Date(tokens.expires_at).getTime() - Date.now()) / 1000 / 60) + ' minutes'
+    });
+    
+    // Set credentials with proper token structure
+    const credentials = {
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
-      expiry_date: new Date(tokens.expires_at).getTime()
-    });
+      expiry_date: new Date(tokens.expires_at).getTime(),
+      // Add token type for proper header formatting
+      token_type: 'Bearer'
+    };
     
-    console.log('🔧 getUserEmail - Setting credentials:', {
-      has_access_token: !!tokens.access_token,
-      has_refresh_token: !!tokens.refresh_token,
-      expires_at: tokens.expires_at,
-      expiry_timestamp: new Date(tokens.expires_at).getTime()
-    });
+    authClient.setCredentials(credentials);
     
-    // Get user info
+    console.log('🔧 getUserEmail - Credentials set, testing auth...');
+    
+    // Small delay to ensure token is properly set
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Try to refresh the token first to ensure it's valid
+    try {
+      console.log('🔧 getUserEmail - Checking token validity...');
+      const tokenInfo = await authClient.getTokenInfo(tokens.access_token);
+      console.log('🔧 getUserEmail - Token info:', {
+        scope: tokenInfo.scope,
+        expiry_date: tokenInfo.expiry_date,
+        audience: tokenInfo.aud
+      });
+    } catch (tokenError: any) {
+      console.log('🔧 getUserEmail - Token validation failed, trying refresh:', tokenError?.message);
+      
+      // Try to refresh the token
+      const { credentials: refreshedCreds } = await authClient.refreshAccessToken();
+      console.log('🔧 getUserEmail - Token refreshed successfully');
+      authClient.setCredentials(refreshedCreds);
+    }
+    
+    // Get user info with explicit auth
     const oauth2 = google.oauth2({ version: 'v2', auth: authClient });
     console.log('🔧 getUserEmail - Making API call to userinfo.get()...');
     
-    const response = await oauth2.userinfo.get();
+    const response = await oauth2.userinfo.get({
+      // Explicitly pass auth to ensure it's used
+      auth: authClient
+    });
+    
     console.log('🔧 getUserEmail - API response:', {
       email: response.data.email,
       id: response.data.id,
@@ -292,8 +324,9 @@ export async function getUserEmail(tokens: GoogleTokens): Promise<string> {
       message: error?.message,
       status: error?.status,
       code: error?.code,
-      config: error?.config,
-      response: error?.response?.data
+      response_status: error?.response?.status,
+      response_data: error?.response?.data,
+      request_headers: error?.config?.headers
     });
     throw error;
   }
