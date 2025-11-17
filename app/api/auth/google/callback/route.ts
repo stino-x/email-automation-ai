@@ -38,16 +38,21 @@ export async function GET(request: NextRequest) {
       scopes: tokens.scopes
     });
 
-    // Fetch the Google account email address
+    // Fetch the Google account email address (REQUIRED for multi-account support)
     console.log('Fetching Google account email...');
     try {
       const googleEmail = await getUserEmail(tokens);
       tokens.google_email = googleEmail;
-      tokens.account_label = 'Primary Account'; // Default label, user can change in settings
+      
+      // Set appropriate label - always include email for clarity
+      tokens.account_label = `Account (${googleEmail})`;
+      
       console.log('Google account email:', googleEmail);
+      console.log('Account label:', tokens.account_label);
     } catch (error) {
-      console.error('Failed to fetch Google email (non-fatal):', error);
-      // Continue without email - backward compatible
+      console.error('Failed to fetch Google email:', error);
+      // For multi-account support, we NEED the email
+      return NextResponse.redirect(new URL('/settings?google_connected=false&error=email_fetch_failed', request.url));
     }
 
     // Save tokens to database (skip email verification - not needed)

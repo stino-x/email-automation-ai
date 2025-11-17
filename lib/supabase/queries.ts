@@ -113,18 +113,37 @@ export async function saveGoogleTokens(tokens: Omit<GoogleTokens, 'id' | 'create
   // Use server client to bypass RLS
   const serverClient = getServerClient();
   
-  // Check if tokens already exist for this user and google_email combination
-  let existingQuery = serverClient
-    .from('google_tokens')
-    .select('*')
-    .eq('user_id', tokens.user_id);
+  // For multi-account support: only check for existing tokens if google_email is provided
+  let existing = null;
+  let selectError = null;
   
-  // If google_email is provided (multi-account support), check for that specific account
   if (tokens.google_email) {
-    existingQuery = existingQuery.eq('google_email', tokens.google_email);
+    // Multi-account: Look for this specific email for this user
+    const result = await serverClient
+      .from('google_tokens')
+      .select('*')
+      .eq('user_id', tokens.user_id)
+      .eq('google_email', tokens.google_email)
+      .maybeSingle();
+    
+    existing = result.data;
+    selectError = result.error;
+    
+    console.log(`Looking for existing token for user ${tokens.user_id} with email ${tokens.google_email}`);
+  } else {
+    // Legacy: Look for any token without google_email (backward compatibility)
+    const result = await serverClient
+      .from('google_tokens')
+      .select('*')
+      .eq('user_id', tokens.user_id)
+      .is('google_email', null)
+      .maybeSingle();
+    
+    existing = result.data;
+    selectError = result.error;
+    
+    console.log(`Looking for existing legacy token for user ${tokens.user_id} (no email)`);
   }
-  
-  const { data: existing, error: selectError } = await existingQuery.maybeSingle();
 
   console.log('Existing tokens found:', !!existing);
   if (selectError && selectError.code !== 'PGRST116') {

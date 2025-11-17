@@ -78,10 +78,10 @@ export async function GET(request: NextRequest) {
     // Get all connected Google accounts
     const allGoogleAccounts = await getAllGoogleTokens(userId);
     const googleAccounts = allGoogleAccounts.map((token, index) => ({
-      email: token.google_email || `Account ${index + 1}`,
+      email: token.google_email || 'Unknown Email',
       is_valid: new Date(token.expires_at) > new Date(),
       created_at: token.created_at,
-      account_label: token.account_label || (index === 0 ? 'Primary Account' : `Account ${index + 1}`)
+      account_label: token.google_email ? `Account (${token.google_email})` : (index === 0 ? 'Primary Account' : `Account ${index + 1}`)
     }));
 
     return NextResponse.json({
