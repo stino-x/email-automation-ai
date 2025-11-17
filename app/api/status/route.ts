@@ -77,11 +77,11 @@ export async function GET(request: NextRequest) {
 
     // Get all connected Google accounts
     const allGoogleAccounts = await getAllGoogleTokens(userId);
-    const googleAccounts = allGoogleAccounts.map(token => ({
-      email: token.google_email || 'Primary Account',
+    const googleAccounts = allGoogleAccounts.map((token, index) => ({
+      email: token.google_email || `Account ${index + 1}`,
       is_valid: new Date(token.expires_at) > new Date(),
       created_at: token.created_at,
-      account_label: token.account_label || 'Primary Account'
+      account_label: token.account_label || (index === 0 ? 'Primary Account' : `Account ${index + 1}`)
     }));
 
     return NextResponse.json({

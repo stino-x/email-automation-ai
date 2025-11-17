@@ -61,7 +61,8 @@ export async function saveConfiguration(
         ai_prompt_template: config.ai_prompt_template,
         is_active: config.is_active,
         max_emails_per_period: config.max_emails_per_period,
-        once_per_window: config.once_per_window
+        once_per_window: config.once_per_window,
+        calendar_id: config.calendar_id
       })
       .eq('user_id', userId)
       .select()

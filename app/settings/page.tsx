@@ -46,6 +46,26 @@ export default function SettingsPage() {
     loadUserAndStatus();
   }, [loadUserAndStatus]);
 
+  // Handle Google connection redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const googleConnected = urlParams.get('google_connected');
+    
+    if (googleConnected === 'true') {
+      toast.success('Google account connected successfully!');
+      // Remove the query parameter from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Refresh status to show the new account
+      if (currentUser) {
+        loadStatus(currentUser.id);
+      }
+    } else if (googleConnected === 'false') {
+      toast.error('Failed to connect Google account');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    setIsConnecting(false);
+  }, [currentUser]);
+
   const loadStatus = async (userId: string) => {
     try {
       setIsLoading(true);
@@ -87,6 +107,34 @@ export default function SettingsPage() {
         loadStatus(currentUser.id);
       } else {
         toast.error('Failed to disconnect');
+      }
+    } catch (error) {
+      toast.error('Failed to disconnect Google account');
+      console.error('Error disconnecting Google account:', error);
+    }
+  };
+
+  const disconnectSpecificAccount = async (email: string) => {
+    if (!currentUser) {
+      toast.error('Please log in first');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/google/disconnect-account', {
+        method: 'DELETE',
+        headers: { 
+          'x-user-id': currentUser.id,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+      });
+
+      if (response.ok) {
+        toast.success('Google account disconnected');
+        loadStatus(currentUser.id);
+      } else {
+        toast.error('Failed to disconnect account');
       }
     } catch (error) {
       toast.error('Failed to disconnect Google account');
@@ -357,14 +405,14 @@ export default function SettingsPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{account.email}</p>
-                            {index === 0 && <Badge className="bg-blue-600 text-xs">Primary</Badge>}
+                            {index === 0 && account.email && !account.email.startsWith('Account ') && <Badge className="bg-blue-600 text-xs">Primary</Badge>}
                           </div>
                           <p className="text-xs text-gray-400 mt-1">
                             {account.is_valid ? 'Gmail • Calendar • Active' : 'Token expired - reconnect needed'}
                           </p>
                         </div>
                       </div>
-                      <Button onClick={disconnectGoogle} variant="outline" size="sm">
+                      <Button onClick={() => disconnectSpecificAccount(account.email)} variant="outline" size="sm">
                         Disconnect
                       </Button>
                     </div>

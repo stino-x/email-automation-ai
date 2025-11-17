@@ -121,9 +121,11 @@ export default function ConfigurationPage() {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.configuration && data.configuration.monitored_emails.length > 0) {
-          setMonitors(data.configuration.monitored_emails);
-          // Only update these if they exist in the saved config
+        if (data.configuration) {
+          // Always set monitored emails (even if empty)
+          setMonitors(data.configuration.monitored_emails || []);
+          
+          // Load saved settings if they exist in the config
           if (data.configuration.ai_prompt_template) {
             setAiPrompt(data.configuration.ai_prompt_template);
           }
